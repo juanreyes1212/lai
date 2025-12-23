@@ -58,7 +58,7 @@ const BlogSection = () => {
               </div>
 
               <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-3 line-clamp-2">
-                <Link to="/blog">{post.title}</Link>
+                <Link to={`/blog/${post.slug}`}>{post.title}</Link>
               </h3>
 
               <p className="text-muted-foreground text-sm mb-4 line-clamp-3 flex-grow">
@@ -77,7 +77,7 @@ const BlogSection = () => {
               </div>
 
               {/* Read more indicator */}
-              <Link to="/blog" className="flex items-center gap-2 mt-4 text-sm text-muted-foreground group-hover:text-primary transition-colors">
+              <Link to={`/blog/${post.slug}`} className="flex items-center gap-2 mt-4 text-sm text-muted-foreground group-hover:text-primary transition-colors">
                 <span>Read article</span>
                 <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
               </Link>
