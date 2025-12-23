@@ -1,14 +1,10 @@
-import { motion } from "framer-motion";
-import { ArrowRight, Code2, Palette, Zap, Users, Mail, MapPin, Phone, Github, Linkedin, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import Navigation from "@/components/portfolio/Navigation";
 import HeroSection from "@/components/portfolio/HeroSection";
 import StatsBar from "@/components/portfolio/StatsBar";
 import SkillsSection from "@/components/portfolio/SkillsSection";
 import ProjectsSection from "@/components/portfolio/ProjectsSection";
 import BlogSection from "@/components/portfolio/BlogSection";
 import CTASection from "@/components/portfolio/CTASection";
-import Navigation from "@/components/portfolio/Navigation";
 import Footer from "@/components/portfolio/Footer";
 
 const Index = () => {

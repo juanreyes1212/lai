@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowDownRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -54,31 +55,22 @@ const HeroSection = () => {
             >
               <Button 
                 size="lg" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground group relative overflow-hidden"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground group"
+                asChild
               >
-                <span className="relative z-10 flex items-center gap-2">
+                <Link to="/work">
                   View My Work
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </span>
+                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </Link>
               </Button>
               <Button 
                 variant="outline" 
                 size="lg"
                 className="border-border/50 hover:border-primary/50 hover:bg-primary/5"
+                asChild
               >
-                Download Resume
+                <Link to="/resume">View Resume</Link>
               </Button>
-            </motion.div>
-
-            {/* Scroll Indicator */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1, duration: 0.6 }}
-              className="hidden lg:flex items-center gap-3 pt-12 text-muted-foreground"
-            >
-              <ArrowDownRight className="h-5 w-5 animate-bounce" />
-              <span className="text-sm">Scroll to explore</span>
             </motion.div>
           </div>
 
