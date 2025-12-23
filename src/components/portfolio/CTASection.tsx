@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
-import { ArrowUpRight, Mail, FileText } from "lucide-react";
+import { ArrowUpRight, Mail, ExternalLink, MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const CTASection = () => {
   return (
-    <section id="contact" className="py-32 px-6 relative overflow-hidden">
+    <section className="py-24 px-6 relative overflow-hidden">
       {/* Background glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
       
@@ -16,13 +17,13 @@ const CTASection = () => {
           viewport={{ once: true }}
           className="text-center space-y-8"
         >
-          <h2 className="text-4xl md:text-6xl font-bold leading-tight">
+          <h2 className="text-3xl md:text-5xl font-bold leading-tight">
             Ready to Build
             <br />
             <span className="text-gradient">Something Amazing?</span>
           </h2>
 
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             I'm always interested in discussing new opportunities, challenging projects, 
             and innovative frontend solutions. Let's connect and explore how we can work together.
           </p>
@@ -36,7 +37,7 @@ const CTASection = () => {
           >
             <Button 
               size="lg" 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground group animate-glow-pulse"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground group"
               asChild
             >
               <a href="mailto:reyes1212@gmail.com">
@@ -49,9 +50,11 @@ const CTASection = () => {
               variant="outline" 
               size="lg"
               className="border-border/50 hover:border-primary/50 hover:bg-primary/5"
+              asChild
             >
-              <FileText className="mr-2 h-5 w-5" />
-              Download Resume
+              <Link to="/resume">
+                Download Resume
+              </Link>
             </Button>
           </motion.div>
 
@@ -61,20 +64,19 @@ const CTASection = () => {
             whileInView={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}
             viewport={{ once: true }}
-            className="pt-12 border-t border-border/50 mt-12"
+            className="pt-8 border-t border-border/50 mt-8"
           >
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center text-muted-foreground">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-sm">Available for opportunities</span>
+                <MapPin className="h-4 w-4 text-primary" />
+                <span className="text-sm">Mesa, AZ</span>
               </div>
-              <span className="hidden sm:block text-border">|</span>
-              <span className="text-sm">Mesa, AZ</span>
               <span className="hidden sm:block text-border">|</span>
               <a 
                 href="mailto:reyes1212@gmail.com" 
-                className="text-sm hover:text-primary transition-colors"
+                className="text-sm hover:text-primary transition-colors flex items-center gap-2"
               >
+                <ExternalLink className="h-4 w-4 text-primary" />
                 reyes1212@gmail.com
               </a>
               <span className="hidden sm:block text-border">|</span>

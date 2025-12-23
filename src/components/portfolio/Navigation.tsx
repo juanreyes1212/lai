@@ -2,17 +2,19 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link, useLocation } from "react-router-dom";
 
 const navItems = [
-  { label: "Work", href: "#work" },
-  { label: "Skills", href: "#skills" },
-  { label: "Blog", href: "#blog" },
-  { label: "Contact", href: "#contact" },
+  { label: "Work", href: "/work" },
+  { label: "Personal", href: "/personal" },
+  { label: "Blog", href: "/blog" },
+  { label: "Resume", href: "/resume" },
 ];
 
 const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +23,8 @@ const Navigation = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const isActive = (href: string) => location.pathname === href;
 
   return (
     <>
@@ -33,34 +37,35 @@ const Navigation = () => {
         }`}
       >
         <div className="container mx-auto max-w-6xl px-6 flex items-center justify-between">
-          <a 
-            href="#" 
+          <Link 
+            to="/" 
             className="text-2xl font-bold tracking-tight"
           >
             <span className="text-gradient">JR</span>
             <span className="text-foreground/80 font-light">.</span>
-          </a>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item.label}
-                href={item.href}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors relative group"
+                to={item.href}
+                className={`text-sm transition-colors relative group ${
+                  isActive(item.href) ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                }`}
               >
                 {item.label}
-                <span className="absolute -bottom-1 left-0 w-0 h-px bg-primary transition-all duration-300 group-hover:w-full" />
-              </a>
+                <span className={`absolute -bottom-1 left-0 h-px bg-primary transition-all duration-300 ${
+                  isActive(item.href) ? "w-full" : "w-0 group-hover:w-full"
+                }`} />
+              </Link>
             ))}
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost" size="sm" asChild>
-              <a href="#contact">Resume</a>
-            </Button>
-            <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              <a href="mailto:reyes1212@gmail.com">Let's Talk</a>
+            <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground" asChild>
+              <a href="mailto:reyes1212@gmail.com">Get In Touch</a>
             </Button>
           </div>
 
@@ -85,24 +90,26 @@ const Navigation = () => {
           >
             <nav className="flex flex-col gap-6">
               {navItems.map((item, index) => (
-                <motion.a
+                <motion.div
                   key={item.label}
-                  href={item.href}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-2xl font-medium text-foreground"
                 >
-                  {item.label}
-                </motion.a>
+                  <Link
+                    to={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`text-2xl font-medium ${
+                      isActive(item.href) ? "text-primary" : "text-foreground"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                </motion.div>
               ))}
-              <div className="pt-6 border-t border-border flex flex-col gap-4">
-                <Button variant="outline" size="lg" className="w-full">
-                  Resume
-                </Button>
-                <Button size="lg" className="w-full bg-primary text-primary-foreground">
-                  Let's Talk
+              <div className="pt-6 border-t border-border">
+                <Button size="lg" className="w-full bg-primary text-primary-foreground" asChild>
+                  <a href="mailto:reyes1212@gmail.com">Get In Touch</a>
                 </Button>
               </div>
             </nav>

@@ -1,51 +1,14 @@
 import { motion } from "framer-motion";
 import { ArrowUpRight, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-const workProjects = [
-  {
-    title: "PetSmart E-Commerce Platform",
-    company: "PetSmart",
-    description: "Led the frontend development of PetSmart's e-commerce platform serving 1.2M+ monthly users with React.js and TypeScript.",
-    tech: ["React.js", "TypeScript", "Redux", "Contentful"],
-    image: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&h=400&fit=crop",
-    featured: true,
-  },
-  {
-    title: "Hownd Business Dashboard",
-    company: "Hownd",
-    description: "Built a comprehensive business analytics dashboard with real-time data visualization and performance metrics.",
-    tech: ["Vue.js", "D3.js", "Node.js", "PostgreSQL"],
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop",
-    featured: true,
-  },
-  {
-    title: "Design System Architecture",
-    company: "Enterprise",
-    description: "Created a scalable design system reducing development time by 40% across multiple product teams.",
-    tech: ["Storybook", "React", "CSS-in-JS", "Figma"],
-    image: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&h=400&fit=crop",
-    featured: false,
-  },
-];
-
-const personalProjects = [
-  {
-    title: "Spotley WiFi",
-    status: "Live",
-    description: "WiFi management platform for businesses with customer analytics and marketing automation.",
-    tech: ["Next.js", "Supabase", "Tailwind"],
-  },
-  {
-    title: "Portfolio Site v2",
-    status: "In Development",
-    description: "Personal portfolio showcasing projects and technical writing with modern animations.",
-    tech: ["React", "Framer Motion", "TypeScript"],
-  },
-];
+import { workProjects, personalProjects } from "@/data/portfolioData";
 
 const ProjectsSection = () => {
+  const featuredWork = workProjects.slice(0, 3);
+  const featuredPersonal = personalProjects.slice(0, 2);
+
   return (
     <section id="work" className="py-24 px-6 bg-muted/30">
       <div className="container mx-auto max-w-6xl">
@@ -65,16 +28,18 @@ const ProjectsSection = () => {
               Enterprise-scale projects showcasing frontend architecture and development excellence
             </p>
           </div>
-          <Button variant="ghost" className="hidden md:flex items-center gap-2 text-muted-foreground hover:text-foreground">
-            View All Work
-            <ArrowRight className="h-4 w-4" />
+          <Button variant="ghost" className="hidden md:flex items-center gap-2 text-muted-foreground hover:text-foreground" asChild>
+            <Link to="/work">
+              View All Work
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </Button>
         </motion.div>
 
         <div className="grid lg:grid-cols-3 gap-6 mb-20">
-          {workProjects.map((project, index) => (
+          {featuredWork.map((project, index) => (
             <motion.article
-              key={project.title}
+              key={project.slug}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -91,11 +56,14 @@ const ProjectsSection = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
                 
                 {/* Hover overlay */}
-                <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <Link 
+                  to="/work"
+                  className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
+                >
                   <div className="w-12 h-12 rounded-full bg-foreground/90 flex items-center justify-center">
                     <ArrowUpRight className="h-5 w-5 text-background" />
                   </div>
-                </div>
+                </Link>
 
                 {/* Featured badge */}
                 {project.featured && (
@@ -114,7 +82,7 @@ const ProjectsSection = () => {
                 </div>
                 
                 <h3 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
-                  {project.title}
+                  <Link to="/work">{project.title}</Link>
                 </h3>
                 
                 <p className="text-muted-foreground text-sm line-clamp-2">
@@ -144,20 +112,28 @@ const ProjectsSection = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="mb-12"
+          className="flex items-end justify-between mb-12"
         >
-          <h3 className="text-2xl md:text-3xl font-bold mb-4">
-            Personal <span className="font-serif italic text-muted-foreground">Projects</span>
-          </h3>
-          <p className="text-muted-foreground">
-            Side projects exploring new technologies and solving personal challenges
-          </p>
+          <div>
+            <h3 className="text-2xl md:text-3xl font-bold mb-4">
+              Personal <span className="font-serif italic text-muted-foreground">Projects</span>
+            </h3>
+            <p className="text-muted-foreground">
+              Side projects exploring new technologies and solving personal challenges
+            </p>
+          </div>
+          <Button variant="ghost" className="hidden md:flex items-center gap-2 text-muted-foreground hover:text-foreground" asChild>
+            <Link to="/personal">
+              View All Projects
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
         </motion.div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {personalProjects.map((project, index) => (
+          {featuredPersonal.map((project, index) => (
             <motion.article
-              key={project.title}
+              key={project.slug}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -175,11 +151,13 @@ const ProjectsSection = () => {
                 >
                   {project.status}
                 </Badge>
-                <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                <Link to="/personal">
+                  <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </Link>
               </div>
               
               <h4 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-2">
-                {project.title}
+                <Link to="/personal">{project.title}</Link>
               </h4>
               
               <p className="text-muted-foreground text-sm mb-4">
