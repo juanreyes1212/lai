@@ -4,6 +4,7 @@ import { Link, useParams, Navigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/portfolio/Navigation";
 import Footer from "@/components/portfolio/Footer";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 import { blogPosts } from "@/data/portfolioData";
 
 const BlogPost = () => {
@@ -104,21 +105,13 @@ const BlogPost = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="prose prose-invert prose-lg max-w-none mb-12"
+            className="max-w-none mb-12"
           >
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
               {post.excerpt}
             </p>
             <div className="glass rounded-2xl p-8 mb-8">
-              <p className="text-foreground/90 leading-relaxed">
-                {post.content}
-              </p>
-              <p className="text-foreground/90 leading-relaxed mt-6">
-                This article explores key concepts and practical strategies that I've learned from working on enterprise-scale applications. The insights shared here come from real-world experience and can be applied to projects of any size.
-              </p>
-              <p className="text-foreground/90 leading-relaxed mt-6">
-                Whether you're just starting out or looking to level up your skills, I hope these insights help you in your journey. Feel free to reach out if you have questions or want to discuss these topics further.
-              </p>
+              <MarkdownRenderer content={post.content} />
             </div>
           </motion.article>
 
