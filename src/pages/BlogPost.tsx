@@ -5,15 +5,22 @@ import { Badge } from "@/components/ui/badge";
 import Navigation from "@/components/portfolio/Navigation";
 import Footer from "@/components/portfolio/Footer";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
+import SkipToContent from "@/components/SkipToContent";
 import { blogPosts } from "@/data/portfolioData";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
   const post = blogPosts.find((p) => p.slug === slug);
+  const prefersReducedMotion = useReducedMotion();
 
   if (!post) {
     return <Navigate to="/blog" replace />;
   }
+
+  const motionProps = prefersReducedMotion
+    ? { initial: false, animate: {} }
+    : {};
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
@@ -34,12 +41,13 @@ const BlogPost = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 bg-noise pointer-events-none opacity-50" />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-glow pointer-events-none" />
+      <SkipToContent />
+      <div className="fixed inset-0 bg-noise pointer-events-none opacity-50" aria-hidden="true" />
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-glow pointer-events-none" aria-hidden="true" />
 
       <Navigation />
 
-      <main className="pt-32 pb-24 px-6">
+      <main id="main-content" className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-4xl">
           {/* Back Link */}
           <motion.div

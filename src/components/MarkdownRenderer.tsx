@@ -44,11 +44,13 @@ const MarkdownRenderer = ({ content, className = '' }: MarkdownRendererProps) =>
         a: ({ href, children }) => (
           <a
             href={href}
-            className="text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
+            className="text-primary hover:text-primary/80 underline underline-offset-4 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-sm"
             target="_blank"
             rel="noopener noreferrer"
+            aria-label={`${children} (opens in new tab)`}
           >
             {children}
+            <span className="sr-only"> (opens in new tab)</span>
           </a>
         ),
         strong: ({ children }) => (
