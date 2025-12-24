@@ -1,39 +1,23 @@
 import { motion } from "framer-motion";
-import { ArrowUpRight, ArrowLeft } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import Navigation from "@/components/portfolio/Navigation";
-import Footer from "@/components/portfolio/Footer";
+import PageLayout from "@/components/portfolio/PageLayout";
+import PageHeader from "@/components/portfolio/PageHeader";
 import { workProjects } from "@/data/portfolioData";
 
 const Work = () => {
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 bg-noise pointer-events-none opacity-50" />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-glow pointer-events-none" />
-      
-      <Navigation />
-      
+    <PageLayout>
       <main className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-6xl">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-16"
-          >
-            <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Home
-            </Link>
-            <h1 className="text-4xl md:text-6xl font-bold mb-4">
-              Professional <span className="text-gradient">Work</span>
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl">
-              Enterprise-scale projects from PetSmart, Hownd, and other companies showcasing frontend architecture and development excellence.
-            </p>
-          </motion.div>
+          <PageHeader
+            backTo="/"
+            backLabel="Back to Home"
+            title="Professional"
+            titleHighlight="Work"
+            description="Enterprise-scale projects from PetSmart, Hownd, and other companies showcasing frontend architecture and development excellence."
+          />
 
           {/* Projects Grid */}
           <div className="space-y-12">
@@ -114,9 +98,7 @@ const Work = () => {
           </div>
         </div>
       </main>
-      
-      <Footer />
-    </div>
+    </PageLayout>
   );
 };
 

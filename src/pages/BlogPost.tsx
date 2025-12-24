@@ -1,52 +1,27 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, Clock, Calendar, User } from "lucide-react";
+import { Clock, Calendar, User } from "lucide-react";
 import { Link, useParams, Navigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import Navigation from "@/components/portfolio/Navigation";
-import Footer from "@/components/portfolio/Footer";
+import PageLayout from "@/components/portfolio/PageLayout";
+import BackLink from "@/components/portfolio/BackLink";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
-import SkipToContent from "@/components/SkipToContent";
 import { blogPosts } from "@/data/portfolioData";
-import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { getCategoryColor } from "@/lib/colors";
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
   const post = blogPosts.find((p) => p.slug === slug);
-  const prefersReducedMotion = useReducedMotion();
 
   if (!post) {
     return <Navigate to="/blog" replace />;
   }
 
-  const motionProps = prefersReducedMotion
-    ? { initial: false, animate: {} }
-    : {};
-
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      "Architecture": "border-purple-500/50 text-purple-400 bg-purple-500/10",
-      "Performance": "border-green-500/50 text-green-400 bg-green-500/10",
-      "Leadership": "border-blue-500/50 text-blue-400 bg-blue-500/10",
-      "TypeScript": "border-cyan-500/50 text-cyan-400 bg-cyan-500/10",
-      "Accessibility": "border-pink-500/50 text-pink-400 bg-pink-500/10",
-      "Migration": "border-orange-500/50 text-orange-400 bg-orange-500/10",
-    };
-    return colors[category] || "border-accent/50 text-accent bg-accent/10";
-  };
-
-  // Find related posts
   const relatedPosts = blogPosts
     .filter((p) => p.slug !== post.slug && p.category === post.category)
     .slice(0, 2);
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <SkipToContent />
-      <div className="fixed inset-0 bg-noise pointer-events-none opacity-50" aria-hidden="true" />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-glow pointer-events-none" aria-hidden="true" />
-
-      <Navigation />
-
+    <PageLayout showSkipToContent>
       <main id="main-content" className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-4xl">
           {/* Back Link */}
@@ -55,13 +30,7 @@ const BlogPost = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <Link
-              to="/blog"
-              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Blog
-            </Link>
+            <BackLink to="/blog" label="Back to Blog" />
           </motion.div>
 
           {/* Article Header */}
@@ -79,15 +48,15 @@ const BlogPost = () => {
             </h1>
             <div className="flex flex-wrap items-center gap-6 text-muted-foreground">
               <div className="flex items-center gap-2">
-                <User className="h-4 w-4" />
+                <User className="h-4 w-4" aria-hidden="true" />
                 <span>Juan Reyes</span>
               </div>
               <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
+                <Calendar className="h-4 w-4" aria-hidden="true" />
                 <span>{post.date}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
+                <Clock className="h-4 w-4" aria-hidden="true" />
                 <span>{post.readTime}</span>
               </div>
             </div>
@@ -175,9 +144,7 @@ const BlogPost = () => {
           )}
         </div>
       </main>
-
-      <Footer />
-    </div>
+    </PageLayout>
   );
 };
 
