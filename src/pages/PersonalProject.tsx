@@ -1,11 +1,12 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, ExternalLink, Github, Calendar } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { Link, useParams, Navigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import Navigation from "@/components/portfolio/Navigation";
-import Footer from "@/components/portfolio/Footer";
+import PageLayout from "@/components/portfolio/PageLayout";
+import BackLink from "@/components/portfolio/BackLink";
 import { personalProjects } from "@/data/portfolioData";
+import { getStatusColor } from "@/lib/colors";
 
 const PersonalProject = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -15,29 +16,12 @@ const PersonalProject = () => {
     return <Navigate to="/personal" replace />;
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Live":
-        return "border-green-500/50 text-green-400 bg-green-500/10";
-      case "In Development":
-        return "border-blue-500/50 text-blue-400 bg-blue-500/10";
-      default:
-        return "border-muted-foreground/50 text-muted-foreground bg-muted/10";
-    }
-  };
-
-  // Find related projects
   const relatedProjects = personalProjects
     .filter((p) => p.slug !== project.slug)
     .slice(0, 2);
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 bg-noise pointer-events-none opacity-50" />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-glow pointer-events-none" />
-
-      <Navigation />
-
+    <PageLayout>
       <main className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-4xl">
           {/* Back Link */}
@@ -46,13 +30,7 @@ const PersonalProject = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <Link
-              to="/personal"
-              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Personal Projects
-            </Link>
+            <BackLink to="/personal" label="Back to Personal Projects" />
           </motion.div>
 
           {/* Project Header */}
@@ -75,7 +53,7 @@ const PersonalProject = () => {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-primary hover:underline"
               >
-                <ExternalLink className="h-4 w-4" />
+                <ExternalLink className="h-4 w-4" aria-hidden="true" />
                 Visit Live Project
               </a>
             )}
@@ -103,7 +81,6 @@ const PersonalProject = () => {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="space-y-8 mb-12"
           >
-            {/* Overview */}
             <div className="glass rounded-2xl p-8">
               <h2 className="text-2xl font-bold mb-4">About This Project</h2>
               <p className="text-foreground/90 leading-relaxed text-lg">
@@ -111,7 +88,6 @@ const PersonalProject = () => {
               </p>
             </div>
 
-            {/* Key Features */}
             <div className="glass rounded-2xl p-8">
               <h2 className="text-2xl font-bold mb-6">Key Features</h2>
               <ul className="space-y-4">
@@ -126,7 +102,6 @@ const PersonalProject = () => {
               </ul>
             </div>
 
-            {/* Tech Stack */}
             <div className="glass rounded-2xl p-8">
               <h2 className="text-2xl font-bold mb-6">Technology Stack</h2>
               <div className="flex flex-wrap gap-3">
@@ -138,12 +113,11 @@ const PersonalProject = () => {
               </div>
             </div>
 
-            {/* Actions */}
             {project.link && (
               <div className="flex gap-4">
                 <Button asChild className="gap-2">
                   <a href={project.link} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4" />
+                    <ExternalLink className="h-4 w-4" aria-hidden="true" />
                     View Live Project
                   </a>
                 </Button>
@@ -192,9 +166,7 @@ const PersonalProject = () => {
           )}
         </div>
       </main>
-
-      <Footer />
-    </div>
+    </PageLayout>
   );
 };
 

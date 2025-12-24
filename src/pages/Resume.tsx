@@ -1,20 +1,14 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, Download, Mail, Phone, MapPin, Github, Linkedin } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Download, Mail, Phone, MapPin, Github, Linkedin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import Navigation from "@/components/portfolio/Navigation";
-import Footer from "@/components/portfolio/Footer";
+import PageLayout from "@/components/portfolio/PageLayout";
+import BackLink from "@/components/portfolio/BackLink";
 import { resumeData } from "@/data/portfolioData";
 
 const Resume = () => {
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 bg-noise pointer-events-none opacity-50" />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-glow pointer-events-none" />
-      
-      <Navigation />
-      
+    <PageLayout>
       <main className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-4xl">
           {/* Header */}
@@ -24,10 +18,7 @@ const Resume = () => {
             transition={{ duration: 0.6 }}
             className="mb-12"
           >
-            <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Home
-            </Link>
+            <BackLink to="/" label="Back to Home" />
             
             <div className="glass rounded-2xl p-8 md:p-12">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8">
@@ -185,9 +176,7 @@ const Resume = () => {
           </motion.div>
         </div>
       </main>
-      
-      <Footer />
-    </div>
+    </PageLayout>
   );
 };
 

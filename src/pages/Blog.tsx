@@ -1,13 +1,14 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { ArrowUpRight, ArrowLeft, Clock, Search, X } from "lucide-react";
+import { ArrowUpRight, Clock, Search, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import Navigation from "@/components/portfolio/Navigation";
-import Footer from "@/components/portfolio/Footer";
+import PageLayout from "@/components/portfolio/PageLayout";
+import PageHeader from "@/components/portfolio/PageHeader";
 import { blogPosts } from "@/data/portfolioData";
+import { getCategoryColor } from "@/lib/colors";
 
 const Blog = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,18 +33,6 @@ const Blog = () => {
     });
   }, [searchQuery, selectedCategory]);
 
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      "Architecture": "border-purple-500/50 text-purple-400 bg-purple-500/10",
-      "Performance": "border-green-500/50 text-green-400 bg-green-500/10",
-      "Leadership": "border-blue-500/50 text-blue-400 bg-blue-500/10",
-      "TypeScript": "border-cyan-500/50 text-cyan-400 bg-cyan-500/10",
-      "Accessibility": "border-pink-500/50 text-pink-400 bg-pink-500/10",
-      "Migration": "border-orange-500/50 text-orange-400 bg-orange-500/10",
-    };
-    return colors[category] || "border-accent/50 text-accent bg-accent/10";
-  };
-
   const clearFilters = () => {
     setSearchQuery("");
     setSelectedCategory(null);
@@ -53,35 +42,16 @@ const Blog = () => {
   const otherPosts = filteredPosts.slice(1);
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 bg-noise pointer-events-none opacity-50" />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-glow pointer-events-none" />
-
-      <Navigation />
-
+    <PageLayout>
       <main className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-6xl">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-12"
-          >
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Home
-            </Link>
-            <h1 className="text-4xl md:text-6xl font-bold mb-4">
-              Blog & <span className="text-gradient">Insights</span>
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl">
-              Technical articles on frontend development, architecture, leadership, and industry trends.
-            </p>
-          </motion.div>
+          <PageHeader
+            backTo="/"
+            backLabel="Back to Home"
+            title="Blog &"
+            titleHighlight="Insights"
+            description="Technical articles on frontend development, architecture, leadership, and industry trends."
+          />
 
           {/* Search and Filter */}
           <motion.div
@@ -104,6 +74,7 @@ const Blog = () => {
                 <button
                   onClick={() => setSearchQuery("")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Clear search"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -276,9 +247,7 @@ const Blog = () => {
           )}
         </div>
       </main>
-
-      <Footer />
-    </div>
+    </PageLayout>
   );
 };
 

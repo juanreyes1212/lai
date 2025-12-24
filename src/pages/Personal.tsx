@@ -1,50 +1,24 @@
 import { motion } from "framer-motion";
-import { ArrowUpRight, ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowUpRight, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import Navigation from "@/components/portfolio/Navigation";
-import Footer from "@/components/portfolio/Footer";
+import PageLayout from "@/components/portfolio/PageLayout";
+import PageHeader from "@/components/portfolio/PageHeader";
 import { personalProjects } from "@/data/portfolioData";
+import { getStatusColor } from "@/lib/colors";
 
 const Personal = () => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Live":
-        return "border-green-500/50 text-green-400 bg-green-500/10";
-      case "In Development":
-        return "border-blue-500/50 text-blue-400 bg-blue-500/10";
-      default:
-        return "border-muted-foreground/50 text-muted-foreground bg-muted/10";
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 bg-noise pointer-events-none opacity-50" />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-gradient-glow pointer-events-none" />
-      
-      <Navigation />
-      
+    <PageLayout>
       <main className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-6xl">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-16"
-          >
-            <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Home
-            </Link>
-            <h1 className="text-4xl md:text-6xl font-bold mb-4">
-              Personal <span className="text-gradient">Projects</span>
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl">
-              Side projects demonstrating technical exploration, problem-solving, and passion for building useful tools.
-            </p>
-          </motion.div>
+          <PageHeader
+            backTo="/"
+            backLabel="Back to Home"
+            title="Personal"
+            titleHighlight="Projects"
+            description="Side projects demonstrating technical exploration, problem-solving, and passion for building useful tools."
+          />
 
           {/* Projects Grid */}
           <div className="grid lg:grid-cols-2 gap-8">
@@ -124,9 +98,7 @@ const Personal = () => {
           </div>
         </div>
       </main>
-      
-      <Footer />
-    </div>
+    </PageLayout>
   );
 };
 
