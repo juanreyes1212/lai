@@ -19,7 +19,7 @@ const Footer = () => {
           </div>
 
           {/* Social Links */}
-          <div className="flex items-center gap-4" role="list" aria-label="Social media links">
+          <ul className="flex items-center gap-4 list-none" aria-label="Social media links">
             <a 
               href="https://github.com/juanreyes1212" 
               target="_blank" 
