@@ -19,6 +19,8 @@ export const getCategoryColor = (category: string): string => {
     "TypeScript": "border-cyan-500/50 text-cyan-400 bg-cyan-500/10",
     "Accessibility": "border-pink-500/50 text-pink-400 bg-pink-500/10",
     "Migration": "border-orange-500/50 text-orange-400 bg-orange-500/10",
+    "Testing": "border-yellow-500/50 text-yellow-400 bg-yellow-500/10",
+    "React": "border-cyan-500/50 text-cyan-400 bg-cyan-500/10",
     // Blog categories from original
     "learnings": "border-blue-500/50 text-blue-400 bg-blue-500/10",
     "tutorials": "border-green-500/50 text-green-400 bg-green-500/10",
