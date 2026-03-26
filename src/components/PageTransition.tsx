@@ -1,5 +1,7 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import PageSkeleton from "./PageSkeleton";
 
 interface PageTransitionProps {
   children: React.ReactNode;
@@ -7,6 +9,16 @@ interface PageTransitionProps {
 
 const PageTransition = ({ children }: PageTransitionProps) => {
   const prefersReducedMotion = useReducedMotion();
+  const [showSkeleton, setShowSkeleton] = useState(true);
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setShowSkeleton(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowSkeleton(false), 150);
+    return () => clearTimeout(timer);
+  }, [prefersReducedMotion]);
 
   if (prefersReducedMotion) {
     return <>{children}</>;
@@ -19,7 +31,7 @@ const PageTransition = ({ children }: PageTransitionProps) => {
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
     >
-      {children}
+      {showSkeleton ? <PageSkeleton /> : children}
     </motion.div>
   );
 };
