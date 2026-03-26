@@ -58,6 +58,7 @@ const ProjectsSection = () => {
                 {/* Hover overlay */}
                 <Link 
                   to="/work"
+                  aria-label={`View ${project.title}`}
                   className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
                 >
                   <div className="w-12 h-12 rounded-full bg-foreground/90 flex items-center justify-center">
