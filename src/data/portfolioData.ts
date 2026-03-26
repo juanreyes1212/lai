@@ -134,6 +134,579 @@ export const personalProjects = [
 // Blog Posts Data
 export const blogPosts = [
   {
+    slug: "tdd-legacy-react",
+    title: "Implementing TDD in Legacy React Codebases",
+    category: "Testing",
+    excerpt: "How I retrofitted a test-driven development workflow into an existing React project using Vitest and React Testing Library — and why writing tests first changed the way I ship code.",
+    content: `Adopting TDD in a greenfield project is one thing. Retrofitting it into a codebase with zero tests, implicit dependencies, and no test infrastructure? That's a different challenge entirely. Here's how I did it — and what I learned along the way.
+
+## Starting from Zero
+
+The project had no test runner, no testing utilities, and no CI gate for tests. The first step wasn't writing tests — it was building the foundation:
+
+- **Vitest** as the test runner (fast, native ESM, excellent Vite integration)
+- **React Testing Library** for component testing
+- **jsdom** as the browser environment
+- **\`@testing-library/jest-dom\`** for expressive assertions
+
+\`\`\`typescript
+// vitest.config.ts
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+  },
+});
+\`\`\`
+
+## The Red-Green-Refactor Loop
+
+TDD follows a simple cycle:
+
+1. **Red** — Write a failing test that describes the behavior you want
+2. **Green** — Write the minimum code to make it pass
+3. **Refactor** — Clean up without changing behavior
+
+The discipline is in *not* writing production code before you have a failing test. It feels slow at first, but it eliminates entire categories of bugs.
+
+## What I Tested First
+
+I started with the components that had the highest risk and the most surface area:
+
+### Navigation Component
+- Renders all nav links with correct routes
+- Highlights the active route
+- Mobile menu opens and closes
+- Menu closes on route change
+- External links (mailto) work correctly
+
+### PageLayout Component
+- Renders children content
+- Includes Navigation and Footer
+- Optionally shows SkipToContent for accessibility
+
+### 404 Page
+- Renders the error heading
+- "Return Home" link points to the correct route
+- Uses the PageLayout wrapper
+
+## Writing Testable Components
+
+TDD forces you to write components that are testable by design:
+
+- **Props over internal state** — components become predictable
+- **Semantic HTML** — \`getByRole\` queries just work
+- **Separation of concerns** — logic is extractable and testable in isolation
+
+\`\`\`typescript
+// Testing behavior, not implementation
+it('closes mobile menu on route change', () => {
+  render(<Navigation />, { wrapper: MemoryRouter });
+  fireEvent.click(screen.getByLabelText(/open menu/i));
+  expect(screen.getByRole('navigation')).toBeVisible();
+  // Simulate route change...
+  expect(screen.queryByRole('navigation')).not.toBeVisible();
+});
+\`\`\`
+
+## Lessons Learned
+
+1. **Start with integration tests** — they catch more real bugs per test than unit tests
+2. **Use \`screen\` queries** — they're more readable and closer to how users interact
+3. **Wrap renders in \`MemoryRouter\`** — any component using \`Link\` or \`useLocation\` needs routing context
+4. **Mock sparingly** — the more you mock, the less your tests tell you
+
+## The Payoff
+
+After setting up TDD, every subsequent feature got tests *before* implementation. Refactoring became fearless. The 12 initial tests caught two regressions within the first week.
+
+TDD isn't about writing more tests — it's about writing *better* code.`,
+    date: "Mar 15, 2025",
+    readTime: "9 min read",
+    tags: ["TDD", "Vitest", "React Testing Library"],
+    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=400&fit=crop",
+  },
+  {
+    slug: "yagni-codebase-pruning",
+    title: "YAGNI in Practice: Auditing and Pruning a Real Codebase",
+    category: "Architecture",
+    excerpt: "I deleted 41 unused components and removed 35 npm dependencies from a production codebase. Here's the process, the tools, and why less code is always better.",
+    content: `YAGNI — "You Aren't Gonna Need It" — is one of those principles every developer agrees with in theory but rarely practices. I recently put it into action on a real project, and the results were dramatic.
+
+## The Problem
+
+The project had accumulated 47 UI components in \`src/components/ui/\`. Only 6 were actually imported anywhere. The rest were scaffolded by a component generator and never used. The \`package.json\` had 50+ dependencies, many tied to those unused components.
+
+Dead code isn't free. It:
+
+- Increases bundle size (even with tree-shaking, some side effects slip through)
+- Slows down IDE indexing and TypeScript compilation
+- Creates confusion about what's "real" vs. scaffolded
+- Adds maintenance burden during dependency updates
+
+## The Audit Process
+
+### Step 1: Identify What's Actually Used
+
+I traced imports from the entry point (\`main.tsx\`) through every page and component:
+
+\`\`\`bash
+# Quick grep for imports from the ui directory
+grep -r "from.*components/ui" src/ --include="*.tsx" --include="*.ts" | sort -u
+\`\`\`
+
+This revealed that only **badge**, **button**, **input**, **toast**, **toaster**, **sonner**, and **tooltip** were imported.
+
+### Step 2: Map Dependencies to Components
+
+Each unused component had associated npm packages:
+
+| Component | Dependencies |
+|-----------|-------------|
+| accordion | @radix-ui/react-accordion |
+| calendar | react-day-picker, date-fns |
+| carousel | embla-carousel-react |
+| chart | recharts |
+| form | react-hook-form, @hookform/resolvers, zod |
+| drawer | vaul |
+| command | cmdk |
+
+### Step 3: Delete with Confidence
+
+With the import analysis complete, I deleted 41 component files and removed 35 npm dependencies in a single pass. The key was doing it atomically — all deletions in one commit — so reverting would be trivial if something broke.
+
+## The Results
+
+| Metric | Before | After |
+|--------|--------|-------|
+| UI components | 47 | 6 |
+| npm dependencies | 50+ | ~15 |
+| \`node_modules\` size | ~180MB | ~95MB |
+| TypeScript check time | ~8s | ~4s |
+
+## When to Prune
+
+Make YAGNI audits a regular practice:
+
+1. **After major milestones** — scope tends to bloat during rapid development
+2. **Before onboarding new team members** — fewer files = faster ramp-up
+3. **During dependency update cycles** — why update what you don't use?
+
+## The Principle
+
+Every line of code is a liability. The best code is no code. YAGNI isn't about being lazy — it's about being intentional. Keep what serves the product, remove everything else.`,
+    date: "Feb 20, 2025",
+    readTime: "7 min read",
+    tags: ["Architecture", "Code Quality", "YAGNI"],
+    image: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=800&h=400&fit=crop",
+  },
+  {
+    slug: "axe-core-accessibility-audit",
+    title: "Running a Full Accessibility Audit with axe-core",
+    category: "Accessibility",
+    excerpt: "How I programmatically audited every page of a React app for WCAG violations using axe-core, and the surprising issues I found hiding in plain sight.",
+    content: `Manual accessibility testing is essential, but it doesn't scale. For a recent project, I ran a programmatic audit using axe-core across every route — and found violations I never would have caught by eye.
+
+## Setting Up Programmatic Auditing
+
+axe-core can run in any JavaScript environment. I wrote a script that:
+
+1. Renders each page in jsdom
+2. Runs axe-core's \`run()\` function
+3. Reports violations with severity and remediation guidance
+
+\`\`\`typescript
+import axe from 'axe-core';
+
+const results = await axe.run(document.body);
+console.log(\`Found \${results.violations.length} violations\`);
+results.violations.forEach(v => {
+  console.log(\`[\${v.impact}] \${v.id}: \${v.description}\`);
+});
+\`\`\`
+
+## What I Found
+
+### 1. \`aria-required-children\` Violation (Critical)
+
+The footer had social media links inside a \`div\` with \`role="list"\`, but the children weren't wrapped in \`li\` elements. Screen readers expected list items and got divs.
+
+**Fix:** Replaced the \`div[role="list"]\` with a semantic \`<ul>\` and wrapped each link in an \`<li>\`.
+
+### 2. \`link-name\` Violations (Serious)
+
+Project cards had overlay links with no accessible name. The link contained only an SVG icon (\`ArrowUpRight\`) — no text, no \`aria-label\`, no \`title\`.
+
+**Fix:** Added descriptive \`aria-label\` attributes: \`"View {project.title} details"\`.
+
+### 3. Icon-Only Interactive Elements
+
+Several buttons and links used only icons without accessible labels. sighted users understood the visual affordance, but screen reader users heard "link" with no context.
+
+**Fix:** Added \`aria-hidden="true"\` to decorative icons and \`aria-label\` to their parent interactive elements.
+
+## The Audit Across All Pages
+
+I ran the audit on six routes:
+
+| Page | Violations Before | Violations After |
+|------|-------------------|------------------|
+| Home | 3 | 0 |
+| Work | 1 | 0 |
+| Personal | 1 | 0 |
+| Blog | 0 | 0 |
+| Resume | 0 | 0 |
+| 404 | 0 | 0 |
+
+## Integrating into CI
+
+To prevent regressions, I added axe-core checks to the test suite:
+
+\`\`\`typescript
+it('has no accessibility violations', async () => {
+  const { container } = render(<Page />);
+  const results = await axe(container);
+  expect(results.violations).toHaveLength(0);
+});
+\`\`\`
+
+## Key Takeaways
+
+- **Automated tools catch ~30% of issues** — but they catch the *easy-to-miss* ones
+- **Semantic HTML prevents most violations** — use \`<button>\`, \`<nav>\`, \`<ul>\` instead of styled divs
+- **Every interactive element needs a name** — if it's clickable, it needs to be announced
+- **Run audits on every page** — violations hide in components you don't look at
+
+Accessibility isn't a feature — it's a quality standard.`,
+    date: "Jan 25, 2025",
+    readTime: "8 min read",
+    tags: ["Accessibility", "axe-core", "WCAG"],
+    image: "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&h=400&fit=crop",
+  },
+  {
+    slug: "six-month-enterprise-contract",
+    title: "Lessons from a 6-Month Enterprise Contract",
+    category: "Leadership",
+    excerpt: "What I learned leading a frontend rebuild for a fintech client under NDA — navigating enterprise processes, earning trust, and shipping under pressure.",
+    content: `Contract work teaches you things full-time employment never will. Last year I spent six months embedded with a fintech company, leading their frontend rebuild. I can't share specifics due to NDA, but the lessons are universal.
+
+## Earning Trust as an Outsider
+
+Walking into an established team as a contractor puts you in an awkward position. You're expected to lead, but you haven't earned trust yet. My approach:
+
+1. **Listen first** — Spend the first two weeks understanding the codebase, the team dynamics, and the unspoken rules
+2. **Quick wins** — Fix a painful bug or improve a slow build pipeline in week one
+3. **Document everything** — Contractors who leave documentation earn permanent goodwill
+4. **Respect existing decisions** — Don't immediately critique the architecture. Understand *why* before suggesting changes.
+
+## Navigating Enterprise Processes
+
+Enterprise development moves differently than startup development:
+
+- **Change management** — Even CSS changes go through review boards
+- **Security reviews** — Every dependency needs approval
+- **Compliance requirements** — Financial data has strict handling rules
+- **Multiple stakeholders** — Product, design, compliance, security all have sign-off authority
+
+I learned to build these cycles into my estimates instead of fighting them.
+
+## The Technical Challenge
+
+The client needed to modernize a legacy frontend while maintaining feature parity with the existing system. The constraints:
+
+- Zero downtime during migration
+- Regulatory compliance for all financial displays
+- Support for IE11 (yes, in fintech, legacy browser support is real)
+- Pixel-perfect design implementation from a 200-page Figma file
+
+## Leading Without Authority
+
+As a contractor, you don't have organizational authority. You lead through:
+
+- **Competence** — Your code and decisions speak for you
+- **Communication** — Over-communicate timelines, risks, and trade-offs
+- **Mentorship** — Help the team grow; they'll advocate for your approach
+- **Results** — Nothing builds trust like shipping on time
+
+## What I'd Do Differently
+
+- **Negotiate scope earlier** — Feature creep is worse in enterprise because the feedback loop is longer
+- **Establish async communication norms** — Meetings consume contractor hours fast
+- **Build CI/CD first** — The deployment pipeline was the biggest bottleneck and I should have tackled it in week one
+
+## The Handoff
+
+The most important phase of contract work is the handoff. I spent the final two weeks:
+
+- Writing comprehensive documentation
+- Recording architectural decision videos
+- Pair programming with the team on complex areas
+- Creating a maintenance runbook
+
+A clean handoff is the difference between being called back and being forgotten.`,
+    date: "Apr 10, 2024",
+    readTime: "10 min read",
+    tags: ["Contract Work", "Leadership", "Enterprise"],
+    image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=400&fit=crop",
+  },
+  {
+    slug: "three-month-contract-healthtech",
+    title: "Shipping Fast on a 3-Month Contract",
+    category: "Leadership",
+    excerpt: "Rapid prototyping and MVP delivery for a healthtech startup under a compressed timeline — lessons in scope management, speed, and knowing when good enough is good enough.",
+    content: `Three months. That's all the runway we had to go from Figma mockups to a production-ready MVP. The client was a healthtech startup preparing for a funding round, and the frontend needed to impress investors while being robust enough for beta users.
+
+## Week 1: Setting the Foundation
+
+With only 12 weeks, every decision in week one compounds. I focused on:
+
+- **Tech stack selection** — React + TypeScript + Tailwind. No debates, no experiments. Use what ships fast.
+- **Project structure** — Feature-based folder organization from day one
+- **CI/CD pipeline** — Automated deployments before writing a single feature
+- **Design token system** — Extract colors, spacing, and typography from Figma into CSS variables
+
+## Weeks 2-4: Core Features
+
+The MVP had three critical flows:
+
+1. Patient onboarding
+2. Provider dashboard
+3. Appointment scheduling
+
+I built them in parallel using mock data, then integrated the API layer once the backend team caught up. This decoupling was the single biggest time-saver.
+
+## Weeks 5-8: Integration and Polish
+
+This is where compressed timelines get dangerous. The temptation is to keep adding features. Instead, I:
+
+- **Froze scope** at week 5 — no new features, only refinement
+- **Prioritized mobile** — investors would demo on phones
+- **Added loading and error states** — empty screens kill demos
+- **Performance optimized** — first load under 2 seconds
+
+## Weeks 9-12: Hardening
+
+The final sprint focused on:
+
+- Cross-browser testing
+- Accessibility basics (keyboard nav, screen reader labels)
+- Error boundary implementation
+- Analytics integration for investor metrics
+
+## Scope Management Lessons
+
+The hardest conversations were about what *not* to build:
+
+- **"Can we add real-time chat?"** — No, but we can add a chat placeholder that shows it's planned
+- **"The design has animations everywhere"** — We'll animate the hero and key transitions, not everything
+- **"We need admin features"** — Phase 2. The MVP is patient-facing only.
+
+Saying no kindly but firmly is the most valuable skill in contract work.
+
+## The Result
+
+The MVP launched on time. The client secured their funding round. Three months later, they brought me back for a follow-up engagement to build the features we'd deferred.
+
+## Key Takeaways
+
+1. **Velocity comes from decisions, not typing speed** — decide fast, build fast
+2. **Mock data unblocks everything** — don't wait for the backend
+3. **Scope freezes save projects** — pick a date and hold the line
+4. **Good enough ships; perfect doesn't** — polish what users see, skip what they don't`,
+    date: "Feb 5, 2024",
+    readTime: "8 min read",
+    tags: ["Contract Work", "MVP", "Startups"],
+    image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&h=400&fit=crop",
+  },
+  {
+    slug: "wcag-certification-journey",
+    title: "Earning My WCAG 2.1 Certification: What I Learned",
+    category: "Accessibility",
+    excerpt: "My journey to becoming IAAP WAS certified — the study process, the exam experience, and how it fundamentally changed how I write code.",
+    content: `I've cared about accessibility for years, but studying for the IAAP Web Accessibility Specialist (WAS) certification showed me how much I didn't know. Here's the full story.
+
+## Why Get Certified?
+
+I'd been building "accessible" websites for years, but my knowledge was patchy:
+
+- I knew about alt text and color contrast
+- I understood semantic HTML basics
+- I could fix issues flagged by automated tools
+
+But I couldn't confidently answer: *"Does this component meet WCAG 2.1 Level AA?"* The certification forced me to fill those gaps systematically.
+
+## The Study Plan
+
+I spent three months preparing, roughly 5-7 hours per week:
+
+### Month 1: WCAG Deep Dive
+- Read every WCAG 2.1 success criterion (all 78 of them)
+- Studied the "Understanding" documents for each criterion
+- Practiced identifying which criteria apply to specific components
+
+### Month 2: Assistive Technology
+- Used VoiceOver daily for all web browsing
+- Tested with NVDA on a Windows VM
+- Learned JAWS keyboard shortcuts
+- Understood how screen readers parse ARIA roles and states
+
+### Month 3: Practice and Review
+- Audited five real websites using the WCAG-EM methodology
+- Took practice exams from Deque University
+- Reviewed every criterion I'd gotten wrong
+
+## Surprising Things I Learned
+
+### 1. ARIA is a Last Resort
+The first rule of ARIA is *don't use ARIA*. Native HTML elements provide built-in accessibility that ARIA can only approximate. I was over-using ARIA roles on elements that already had semantic meaning.
+
+### 2. Focus Management is Hard
+Modal dialogs, dropdown menus, and single-page app route changes all require careful focus management. The focus should move predictably, and users should always know where they are.
+
+### 3. Cognitive Accessibility Matters
+WCAG 2.1 added criteria for cognitive and learning disabilities:
+- **Identify Input Purpose** (1.3.5) — autocomplete attributes help password managers and assistive tech
+- **Reflow** (1.4.10) — content should work at 400% zoom
+- **Text Spacing** (1.4.12) — users may override your CSS for readability
+
+### 4. Mobile Accessibility is Different
+Touch targets need to be at least 44x44 CSS pixels. Gesture-based interactions need alternatives. Screen reader behavior differs significantly between iOS and Android.
+
+## The Exam
+
+The WAS exam is 75 multiple-choice questions in 2 hours:
+
+- ~40% WCAG knowledge (criteria, conformance levels, principles)
+- ~30% testing methodology (tools, techniques, reporting)
+- ~30% implementation (HTML, ARIA, CSS techniques)
+
+The hardest questions weren't about knowing the rules — they were about applying judgment to ambiguous scenarios.
+
+## How It Changed My Code
+
+Since earning the certification, I:
+
+- **Start with semantic HTML** and only add ARIA when native elements fall short
+- **Test with keyboard first** before even looking at the visual design
+- **Include accessibility criteria** in every user story's definition of done
+- **Run axe-core in CI** to catch regressions automatically
+- **Advocate for accessibility** in design reviews, not just code reviews
+
+## Is It Worth It?
+
+Absolutely. The certification didn't teach me accessibility — it taught me to *think* about accessibility. Every component I build now, I instinctively consider: how does this work without a mouse? Without sight? Without perfect cognition?
+
+That mental model is worth more than the credential itself.`,
+    date: "Nov 12, 2023",
+    readTime: "11 min read",
+    tags: ["Accessibility", "WCAG", "Certification"],
+    image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&h=400&fit=crop",
+  },
+  {
+    slug: "continuous-learning-practice",
+    title: "Leveling Up: Building a Continuous Learning Practice",
+    category: "learnings",
+    excerpt: "How I structure my professional development — balancing certifications, side projects, conference talks, and hands-on learning without burning out.",
+    content: `The frontend ecosystem moves fast. Frameworks evolve, best practices shift, and new tools emerge constantly. Staying current isn't optional — but it also can't consume every waking hour. Here's how I've built a sustainable learning practice.
+
+## The 70-20-10 Framework
+
+I structure my learning time roughly as:
+
+- **70% hands-on work** — Learning by building real things (side projects, contract work, open source)
+- **20% social learning** — Code reviews, mentoring, conference talks, community discussions
+- **10% formal education** — Courses, certifications, books, structured curricula
+
+This ratio keeps learning grounded in practical application.
+
+## Certifications: Strategic, Not Compulsive
+
+I pursue certifications when they fill a specific knowledge gap:
+
+- **IAAP WAS** — Filled gaps in my accessibility knowledge and gave me credibility in design reviews
+- **AWS Cloud Practitioner** — Gave me enough backend context to have informed architecture discussions
+
+I don't collect certifications for resume padding. Each one should change how I work.
+
+## Side Projects as Learning Labs
+
+Side projects are my primary learning tool. Each one has a learning objective:
+
+| Project | Learning Goal |
+|---------|--------------|
+| Spotley WiFi | Next.js app router, Supabase, Stripe integration |
+| Code Snippets Manager | Electron, desktop app patterns, SQLite |
+| Portfolio v2 | Framer Motion, advanced Tailwind, performance optimization |
+
+The key is *finishing* projects, not starting them. A shipped side project teaches more than five abandoned ones.
+
+## Conference Talks and Writing
+
+Teaching forces you to understand deeply. I commit to:
+
+- **2-3 blog posts per quarter** on topics I'm actively learning
+- **1 conference talk per year** on something I've shipped in production
+- **Weekly tech discussions** with my team or community
+
+Writing this blog is itself a learning practice. Explaining TDD or accessibility auditing to others solidified my own understanding.
+
+## Structured Reading
+
+I maintain a reading queue with three categories:
+
+### Technical Depth
+- Language and framework documentation (yes, actually reading the docs)
+- RFCs and proposals for upcoming features
+- Academic papers on relevant CS topics
+
+### Technical Breadth
+- Blogs from engineers at companies I admire
+- Conference talk recordings from events I couldn't attend
+- Newsletters like JavaScript Weekly and Frontend Focus
+
+### Non-Technical
+- Books on leadership and communication
+- Product management perspectives
+- Design thinking and UX research
+
+## Avoiding Burnout
+
+The most important part of continuous learning is sustainability:
+
+1. **Set boundaries** — No learning after 8pm. Weekends are optional.
+2. **Follow curiosity** — Forced learning doesn't stick. Learn what excites you.
+3. **Celebrate progress** — Keep a "things I learned" log. Review it monthly.
+4. **Take breaks** — Some months I learn nothing new and that's fine.
+5. **Say no** — Not every new framework deserves your attention.
+
+## The Compound Effect
+
+Individual learning sessions feel small. But over years, they compound:
+
+- Year 1: "I can build React components"
+- Year 3: "I can architect frontend systems"
+- Year 5: "I can lead teams and make technology decisions"
+- Year 7+: "I can mentor others through the same journey"
+
+The key is consistency, not intensity. Thirty minutes of focused learning daily beats an occasional weekend binge.
+
+## My Current Learning Queue
+
+For the curious, here's what I'm studying right now:
+
+- **React Server Components** — Understanding the mental model shift
+- **View Transitions API** — Native browser animations for page transitions
+- **AI-assisted development** — Integrating LLMs into development workflows thoughtfully
+- **System design** — Scaling frontend architectures beyond single applications
+
+The learning never stops — and that's what makes this career exciting.`,
+    date: "Jul 8, 2023",
+    readTime: "9 min read",
+    tags: ["Learning", "Career", "Professional Development"],
+    image: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800&h=400&fit=crop",
+  },
+  {
     slug: "scalable-design-systems",
     title: "Building Scalable Design Systems for Enterprise Applications",
     category: "Architecture",
