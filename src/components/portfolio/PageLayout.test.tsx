@@ -20,7 +20,8 @@ describe("PageLayout", () => {
 
   it("includes Navigation", () => {
     renderLayout();
-    expect(screen.getByText("JR")).toBeInTheDocument();
+    const logos = screen.getAllByText("JR");
+    expect(logos.length).toBeGreaterThanOrEqual(1);
   });
 
   it("does not render SkipToContent by default", () => {
