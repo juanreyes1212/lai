@@ -1,23 +1,51 @@
-import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Home } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import PageLayout from "@/components/portfolio/PageLayout";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const NotFound = () => {
-  const location = useLocation();
+  const prefersReducedMotion = useReducedMotion();
 
-  useEffect(() => {
-    console.error("404 Error: User attempted to access non-existent route:", location.pathname);
-  }, [location.pathname]);
+  const animate = prefersReducedMotion
+    ? { opacity: 1 }
+    : { opacity: 1, y: 0 };
+  const initial = prefersReducedMotion
+    ? { opacity: 0 }
+    : { opacity: 0, y: 30 };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">404</h1>
-        <p className="mb-4 text-xl text-muted-foreground">Oops! Page not found</p>
-        <a href="/" className="text-primary underline hover:text-primary/90">
-          Return to Home
-        </a>
-      </div>
-    </div>
+    <PageLayout>
+      <main className="flex min-h-[80vh] items-center justify-center px-6 pt-24">
+        <div className="relative text-center">
+          {/* Glow effect */}
+          <div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full bg-primary/10 blur-[100px] pointer-events-none"
+            aria-hidden="true"
+          />
+
+          <motion.div
+            initial={initial}
+            animate={animate}
+            transition={{ duration: 0.6 }}
+            className="relative glass rounded-2xl p-12 max-w-md mx-auto"
+          >
+            <h1 className="text-8xl font-bold text-gradient mb-4">404</h1>
+            <p className="text-xl text-foreground mb-2">Page not found</p>
+            <p className="text-muted-foreground mb-8">
+              The page you're looking for doesn't exist or has been moved.
+            </p>
+            <Button asChild size="lg">
+              <Link to="/">
+                <Home className="h-4 w-4" />
+                Return Home
+              </Link>
+            </Button>
+          </motion.div>
+        </div>
+      </main>
+    </PageLayout>
   );
 };
 
