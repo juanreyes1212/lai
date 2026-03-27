@@ -18,13 +18,13 @@ const AnimatedRoutes = () => {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<PageTransition><Index /></PageTransition>} />
-        <Route path="/work" element={<PageTransition><Work /></PageTransition>} />
-        <Route path="/work/:slug" element={<PageTransition><WorkProject /></PageTransition>} />
-        <Route path="/personal" element={<PageTransition><Personal /></PageTransition>} />
-        <Route path="/personal/:slug" element={<PageTransition><PersonalProject /></PageTransition>} />
-        <Route path="/blog" element={<PageTransition><Blog /></PageTransition>} />
-        <Route path="/blog/:slug" element={<PageTransition><BlogPost /></PageTransition>} />
-        <Route path="/resume" element={<PageTransition><Resume /></PageTransition>} />
+        <Route path="/work" element={<PageTransition skeleton="grid"><Work /></PageTransition>} />
+        <Route path="/work/:slug" element={<PageTransition skeleton="detail"><WorkProject /></PageTransition>} />
+        <Route path="/personal" element={<PageTransition skeleton="grid"><Personal /></PageTransition>} />
+        <Route path="/personal/:slug" element={<PageTransition skeleton="detail"><PersonalProject /></PageTransition>} />
+        <Route path="/blog" element={<PageTransition skeleton="grid"><Blog /></PageTransition>} />
+        <Route path="/blog/:slug" element={<PageTransition skeleton="detail"><BlogPost /></PageTransition>} />
+        <Route path="/resume" element={<PageTransition skeleton="resume"><Resume /></PageTransition>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>

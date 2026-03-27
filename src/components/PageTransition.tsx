@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import PageSkeleton from "./PageSkeleton";
+import PageSkeleton, { type SkeletonVariant } from "./PageSkeleton";
 
 interface PageTransitionProps {
   children: React.ReactNode;
+  skeleton?: SkeletonVariant;
 }
 
-const PageTransition = ({ children }: PageTransitionProps) => {
+const PageTransition = ({ children, skeleton = "default" }: PageTransitionProps) => {
   const prefersReducedMotion = useReducedMotion();
   const [showSkeleton, setShowSkeleton] = useState(true);
 
@@ -31,7 +32,7 @@ const PageTransition = ({ children }: PageTransitionProps) => {
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
     >
-      {showSkeleton ? <PageSkeleton /> : children}
+      {showSkeleton ? <PageSkeleton variant={skeleton} /> : children}
     </motion.div>
   );
 };
