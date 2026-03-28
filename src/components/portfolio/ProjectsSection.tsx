@@ -51,13 +51,14 @@ const ProjectsSection = () => {
                 <img
                   src={project.image}
                   alt={project.title}
+                  loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
                 
                 {/* Hover overlay */}
                 <Link 
-                  to="/work"
+                  to={`/work/${project.slug}`}
                   aria-label={`View ${project.title}`}
                   className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
                 >
@@ -83,7 +84,7 @@ const ProjectsSection = () => {
                 </div>
                 
                 <h3 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
-                  <Link to="/work">{project.title}</Link>
+                  <Link to={`/work/${project.slug}`}>{project.title}</Link>
                 </h3>
                 
                 <p className="text-muted-foreground text-sm line-clamp-2">
@@ -152,13 +153,13 @@ const ProjectsSection = () => {
                 >
                   {project.status}
                 </Badge>
-                <Link to="/personal" aria-label={`View ${project.title}`}>
+                <Link to={`/personal/${project.slug}`} aria-label={`View ${project.title}`}>
                   <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" aria-hidden="true" />
                 </Link>
               </div>
               
               <h4 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-2">
-                <Link to="/personal">{project.title}</Link>
+                <Link to={`/personal/${project.slug}`}>{project.title}</Link>
               </h4>
               
               <p className="text-muted-foreground text-sm mb-4">
