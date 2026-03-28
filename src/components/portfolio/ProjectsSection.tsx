@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { workProjects, personalProjects } from "@/data/portfolioData";
+import { getStatusColor } from "@/lib/colors";
 
 const ProjectsSection = () => {
   const featuredWork = workProjects.slice(0, 3);
@@ -117,9 +118,9 @@ const ProjectsSection = () => {
           className="flex items-end justify-between mb-12"
         >
           <div>
-            <h3 className="text-2xl md:text-3xl font-bold mb-4">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">
               Personal <span className="font-serif italic text-muted-foreground">Projects</span>
-            </h3>
+            </h2>
             <p className="text-muted-foreground">
               Side projects exploring new technologies and solving personal challenges
             </p>
@@ -145,11 +146,7 @@ const ProjectsSection = () => {
               <div className="flex items-start justify-between mb-4">
                 <Badge 
                   variant="outline" 
-                  className={`${
-                    project.status === "Live" 
-                      ? "border-green-500/50 text-green-400 bg-green-500/10" 
-                      : "border-blue-500/50 text-blue-400 bg-blue-500/10"
-                  }`}
+                  className={getStatusColor(project.status)}
                 >
                   {project.status}
                 </Badge>
@@ -158,9 +155,9 @@ const ProjectsSection = () => {
                 </Link>
               </div>
               
-              <h4 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-2">
+              <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-2">
                 <Link to={`/personal/${project.slug}`}>{project.title}</Link>
-              </h4>
+              </h3>
               
               <p className="text-muted-foreground text-sm mb-4">
                 {project.description}

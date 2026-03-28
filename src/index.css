@@ -56,55 +56,8 @@
     --shadow-card: 0 25px 50px -12px hsl(0 0% 0% / 0.5);
     --shadow-glow: 0 0 80px hsl(30 85% 55% / 0.2);
 
-    /* Sidebar - keep consistent */
-    --sidebar-background: 220 20% 8%;
-    --sidebar-foreground: 45 15% 85%;
-    --sidebar-primary: 30 85% 55%;
-    --sidebar-primary-foreground: 220 20% 6%;
-    --sidebar-accent: 220 15% 15%;
-    --sidebar-accent-foreground: 45 15% 85%;
-    --sidebar-border: 220 15% 20%;
-    --sidebar-ring: 30 85% 55%;
   }
 
-  .dark {
-    --background: 220 20% 6%;
-    --foreground: 45 20% 95%;
-
-    --card: 220 18% 10%;
-    --card-foreground: 45 20% 95%;
-
-    --popover: 220 18% 10%;
-    --popover-foreground: 45 20% 95%;
-
-    --primary: 30 85% 55%;
-    --primary-foreground: 220 20% 6%;
-
-    --secondary: 220 15% 15%;
-    --secondary-foreground: 45 15% 85%;
-
-    --muted: 220 15% 18%;
-    --muted-foreground: 220 10% 55%;
-
-    --accent: 42 92% 60%;
-    --accent-foreground: 220 20% 6%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 45 20% 95%;
-
-    --border: 220 15% 20%;
-    --input: 220 15% 18%;
-    --ring: 30 85% 55%;
-
-    --sidebar-background: 220 20% 8%;
-    --sidebar-foreground: 45 15% 85%;
-    --sidebar-primary: 30 85% 55%;
-    --sidebar-primary-foreground: 220 20% 6%;
-    --sidebar-accent: 220 15% 15%;
-    --sidebar-accent-foreground: 45 15% 85%;
-    --sidebar-border: 220 15% 20%;
-    --sidebar-ring: 30 85% 55%;
-  }
 }
 
 @layer base {
@@ -251,27 +204,3 @@
   }
 }
 
-/* Skip link styling */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.sr-only:focus,
-.sr-only.focus\:not-sr-only:focus {
-  position: absolute;
-  width: auto;
-  height: auto;
-  padding: 0;
-  margin: 0;
-  overflow: visible;
-  clip: auto;
-  white-space: normal;
-}
