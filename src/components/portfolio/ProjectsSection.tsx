@@ -155,7 +155,7 @@ const ProjectsSection = () => {
                 </Link>
               </div>
               
-              <h4 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-2">
+              <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-2">
                 <Link to={`/personal/${project.slug}`}>{project.title}</Link>
               </h4>
               
