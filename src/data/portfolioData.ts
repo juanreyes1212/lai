@@ -134,6 +134,169 @@ export const personalProjects = [
 // Blog Posts Data
 export const blogPosts = [
   {
+    slug: "react-helmet-json-ld-seo",
+    title: "Boosting SEO in React Apps with react-helmet-async and JSON-LD",
+    category: "Performance",
+    excerpt: "How I implemented dynamic meta tags and structured data across a multi-page React portfolio — and the practical lessons learned about SEO in single-page applications.",
+    content: `Single-page applications have a complicated relationship with SEO. Search engines have gotten better at rendering JavaScript, but relying on that is a gamble. Here's how I took control of SEO in a React app using \`react-helmet-async\` and JSON-LD structured data.
+
+## The Problem with SPAs and SEO
+
+By default, a React app serves a single \`index.html\` with one set of meta tags. Every route — your home page, blog posts, project pages — all share the same \`<title>\` and \`<meta description>\`. That means:
+
+- Google sees the same title for every page
+- Social media previews show generic information when links are shared
+- Structured data doesn't reflect the actual content of each page
+
+## Why react-helmet-async?
+
+The original \`react-helmet\` library is no longer maintained and has issues with React 18's concurrent features. \`react-helmet-async\` is a drop-in replacement that:
+
+- Supports React 18 and concurrent mode
+- Is fully thread-safe (important for SSR)
+- Uses a \`HelmetProvider\` context instead of side effects
+
+\`\`\`typescript
+// App.tsx — wrap your app once
+import { HelmetProvider } from "react-helmet-async";
+
+const App = () => (
+  <HelmetProvider>
+    <Router>
+      <Routes />
+    </Router>
+  </HelmetProvider>
+);
+\`\`\`
+
+## Building a Reusable SEO Component
+
+Instead of scattering \`<Helmet>\` tags across every page, I built a single \`<SEO>\` component that handles all meta tags consistently:
+
+\`\`\`typescript
+interface SEOProps {
+  title?: string;
+  description?: string;
+  canonical?: string;
+  ogImage?: string;
+  ogType?: string;
+  jsonLd?: Record<string, unknown>;
+  noindex?: boolean;
+}
+
+const SEO = ({ title, description, canonical, ogImage, ogType = "website", jsonLd, noindex }: SEOProps) => {
+  const fullTitle = title ? \`\${title} | Juan Reyes\` : "Juan Reyes | Senior Frontend Developer";
+
+  return (
+    <Helmet>
+      <title>{fullTitle}</title>
+      <meta name="description" content={description} />
+      <link rel="canonical" href={\`https://juanreyes.dev\${canonical}\`} />
+      <meta property="og:title" content={fullTitle} />
+      <meta property="og:description" content={description} />
+      {jsonLd && (
+        <script type="application/ld+json">
+          {JSON.stringify(jsonLd)}
+        </script>
+      )}
+    </Helmet>
+  );
+};
+\`\`\`
+
+This approach gives every page unique, descriptive metadata with minimal boilerplate.
+
+## JSON-LD: Speaking Google's Language
+
+JSON-LD (JavaScript Object Notation for Linked Data) is Google's preferred format for structured data. It tells search engines *what* your content is — not just what it says.
+
+### Person Schema (Home Page)
+
+\`\`\`json
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Juan Reyes",
+  "jobTitle": "Senior Frontend Developer",
+  "url": "https://juanreyes.dev",
+  "knowsAbout": ["React.js", "Vue.js", "TypeScript"]
+}
+\`\`\`
+
+This tells Google: "This page is about a specific person with these skills." It can power knowledge panels and rich results.
+
+### BlogPosting Schema (Blog Posts)
+
+\`\`\`json
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Article Title",
+  "description": "Article excerpt...",
+  "datePublished": "2025-03-15",
+  "author": { "@type": "Person", "name": "Juan Reyes" }
+}
+\`\`\`
+
+This enables rich snippets in search results — showing the author, date, and description directly in Google.
+
+## Lessons Learned
+
+### 1. Canonical URLs Prevent Duplicate Content
+
+Without canonical tags, Google might index \`/blog/my-post\`, \`/blog/my-post?\`, and \`/blog/my-post#section\` as separate pages. Always set a canonical URL:
+
+\`\`\`html
+<link rel="canonical" href="https://juanreyes.dev/blog/my-post" />
+\`\`\`
+
+### 2. Open Graph Tags Are Not Optional
+
+Every page shared on Twitter, LinkedIn, or Slack uses Open Graph tags for previews. Without them, you get a generic card with no image. With them, you control the narrative:
+
+- \`og:title\` — what people see as the headline
+- \`og:description\` — the preview text
+- \`og:image\` — the visual that makes people click
+
+### 3. Use \`noindex\` for Utility Pages
+
+Your 404 page, search results, and filtered views shouldn't be indexed. Mark them explicitly:
+
+\`\`\`html
+<meta name="robots" content="noindex,nofollow" />
+\`\`\`
+
+### 4. Test with Real Tools
+
+Don't assume your meta tags work — validate them:
+
+- **Google Rich Results Test** — validates JSON-LD
+- **Facebook Sharing Debugger** — previews Open Graph cards
+- **Twitter Card Validator** — checks Twitter card rendering
+
+### 5. Helmet Renders Last Wins
+
+If multiple \`<Helmet>\` components set the same tag, the deepest one in the component tree wins. This is actually useful — set defaults at the layout level and override per page.
+
+## The Impact
+
+After implementing per-page SEO:
+
+- Each page has a unique, descriptive title under 60 characters
+- Meta descriptions are tailored to content, under 160 characters
+- Blog posts show rich snippets in Google with author and date
+- Social shares display proper previews with images
+- The 404 page is excluded from indexing
+
+## Key Takeaway
+
+SEO in React isn't hard — it's just intentional. A reusable \`<SEO>\` component with \`react-helmet-async\` and JSON-LD structured data gives you full control over how search engines and social platforms see every page of your app.`,
+    date: "Mar 28, 2025",
+    readTime: "10 min read",
+    tags: ["SEO", "React Helmet", "JSON-LD"],
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=400&fit=crop",
+  },
+  {
     slug: "tdd-legacy-react",
     title: "Implementing TDD in Legacy React Codebases",
     category: "Testing",
