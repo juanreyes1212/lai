@@ -153,7 +153,7 @@ const ProjectsSection = () => {
                 >
                   {project.status}
                 </Badge>
-                <Link to="/personal" aria-label={`View ${project.title}`}>
+                <Link to={`/personal/${project.slug}`} aria-label={`View ${project.title}`}>
                   <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" aria-hidden="true" />
                 </Link>
               </div>
