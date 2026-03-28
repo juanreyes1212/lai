@@ -4,6 +4,7 @@ import { Link, useParams, Navigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import PageLayout from "@/components/portfolio/PageLayout";
 import BackLink from "@/components/portfolio/BackLink";
+import SEO from "@/components/SEO";
 import { workProjects } from "@/data/portfolioData";
 
 const WorkProject = () => {
