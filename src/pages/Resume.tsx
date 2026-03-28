@@ -51,9 +51,11 @@ const Resume = () => {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button className="bg-primary text-primary-foreground">
-                    <Download className="mr-2 h-4 w-4" />
-                    Download PDF
+                  <Button className="bg-primary text-primary-foreground" asChild>
+                    <a href="/resume.pdf" download="Juan_Reyes_Resume.pdf">
+                      <Download className="mr-2 h-4 w-4" />
+                      Download PDF
+                    </a>
                   </Button>
                 </div>
               </div>
