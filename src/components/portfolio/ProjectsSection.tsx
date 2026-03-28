@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { workProjects, personalProjects } from "@/data/portfolioData";
+import { getStatusColor } from "@/lib/colors";
 
 const ProjectsSection = () => {
   const featuredWork = workProjects.slice(0, 3);
