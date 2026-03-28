@@ -84,7 +84,7 @@ const ProjectsSection = () => {
                 </div>
                 
                 <h3 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
-                  <Link to="/work">{project.title}</Link>
+                  <Link to={`/work/${project.slug}`}>{project.title}</Link>
                 </h3>
                 
                 <p className="text-muted-foreground text-sm line-clamp-2">
