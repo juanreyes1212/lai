@@ -18,6 +18,7 @@ const NotFound = () => {
 
   return (
     <PageLayout>
+      <SEO title="Page Not Found" noindex />
       <main className="flex min-h-[80vh] items-center justify-center px-6 pt-24">
         <div className="relative text-center">
           {/* Glow effect */}
