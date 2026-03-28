@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import PageLayout from "@/components/portfolio/PageLayout";
 import BackLink from "@/components/portfolio/BackLink";
+import SEO from "@/components/SEO";
 import { personalProjects } from "@/data/portfolioData";
 import { getStatusColor } from "@/lib/colors";
 
