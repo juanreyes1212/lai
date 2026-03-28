@@ -4,6 +4,7 @@ import { Link, useParams, Navigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import PageLayout from "@/components/portfolio/PageLayout";
 import BackLink from "@/components/portfolio/BackLink";
+import SEO from "@/components/SEO";
 import { workProjects } from "@/data/portfolioData";
 
 const WorkProject = () => {
@@ -20,6 +21,12 @@ const WorkProject = () => {
 
   return (
     <PageLayout>
+      <SEO
+        title={`${project.title} — ${project.company}`}
+        description={project.description}
+        canonical={`/work/${project.slug}`}
+        ogImage={project.image}
+      />
       <main className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-4xl">
           {/* Back Link */}

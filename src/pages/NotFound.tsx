@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PageLayout from "@/components/portfolio/PageLayout";
+import SEO from "@/components/SEO";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const NotFound = () => {
@@ -17,6 +18,7 @@ const NotFound = () => {
 
   return (
     <PageLayout>
+      <SEO title="Page Not Found" noindex />
       <main className="flex min-h-[80vh] items-center justify-center px-6 pt-24">
         <div className="relative text-center">
           {/* Glow effect */}

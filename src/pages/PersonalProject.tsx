@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import PageLayout from "@/components/portfolio/PageLayout";
 import BackLink from "@/components/portfolio/BackLink";
+import SEO from "@/components/SEO";
 import { personalProjects } from "@/data/portfolioData";
 import { getStatusColor } from "@/lib/colors";
 
@@ -22,6 +23,12 @@ const PersonalProject = () => {
 
   return (
     <PageLayout>
+      <SEO
+        title={project.title}
+        description={project.description}
+        canonical={`/personal/${project.slug}`}
+        ogImage={project.image}
+      />
       <main className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-4xl">
           {/* Back Link */}
