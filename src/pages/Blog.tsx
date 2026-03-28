@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import PageLayout from "@/components/portfolio/PageLayout";
 import PageHeader from "@/components/portfolio/PageHeader";
+import SEO from "@/components/SEO";
 import { blogPosts } from "@/data/portfolioData";
 import { getCategoryColor } from "@/lib/colors";
 
