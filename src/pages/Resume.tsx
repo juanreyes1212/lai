@@ -4,11 +4,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import PageLayout from "@/components/portfolio/PageLayout";
 import BackLink from "@/components/portfolio/BackLink";
+import SEO from "@/components/SEO";
 import { resumeData } from "@/data/portfolioData";
 
 const Resume = () => {
   return (
     <PageLayout>
+      <SEO
+        title="Resume"
+        description="Resume of Juan Reyes — Senior Frontend Developer with 7+ years of experience in React, Vue.js, TypeScript, and design systems."
+        canonical="/resume"
+      />
       <main className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-4xl">
           {/* Header */}

@@ -4,11 +4,17 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import PageLayout from "@/components/portfolio/PageLayout";
 import PageHeader from "@/components/portfolio/PageHeader";
+import SEO from "@/components/SEO";
 import { workProjects } from "@/data/portfolioData";
 
 const Work = () => {
   return (
     <PageLayout>
+      <SEO
+        title="Professional Work"
+        description="Enterprise-scale projects from PetSmart, Hownd, and other companies showcasing frontend architecture and development excellence."
+        canonical="/work"
+      />
       <main className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-6xl">
           <PageHeader

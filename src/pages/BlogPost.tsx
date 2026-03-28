@@ -23,6 +23,23 @@ const BlogPost = () => {
 
   return (
     <PageLayout showSkipToContent>
+      <SEO
+        title={post.title}
+        description={post.excerpt}
+        canonical={`/blog/${post.slug}`}
+        ogImage={post.image}
+        ogType="article"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          headline: post.title,
+          description: post.excerpt,
+          image: post.image,
+          datePublished: post.date,
+          author: { "@type": "Person", name: "Juan Reyes" },
+          url: `https://juanreyes.dev/blog/${post.slug}`,
+        }}
+      />
       <main id="main-content" className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-4xl">
           {/* Back Link */}

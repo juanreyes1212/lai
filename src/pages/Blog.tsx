@@ -44,6 +44,18 @@ const Blog = () => {
 
   return (
     <PageLayout>
+      <SEO
+        title="Blog & Insights"
+        description="Technical articles on frontend development, React architecture, testing, accessibility, and leadership by Juan Reyes."
+        canonical="/blog"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Blog",
+          name: "Juan Reyes Blog",
+          url: "https://juanreyes.dev/blog",
+          author: { "@type": "Person", name: "Juan Reyes" },
+        }}
+      />
       <main className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-6xl">
           <PageHeader

@@ -4,12 +4,18 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import PageLayout from "@/components/portfolio/PageLayout";
 import PageHeader from "@/components/portfolio/PageHeader";
+import SEO from "@/components/SEO";
 import { personalProjects } from "@/data/portfolioData";
 import { getStatusColor } from "@/lib/colors";
 
 const Personal = () => {
   return (
     <PageLayout>
+      <SEO
+        title="Personal Projects"
+        description="Side projects demonstrating technical exploration, problem-solving, and passion for building useful tools."
+        canonical="/personal"
+      />
       <main className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-6xl">
           <PageHeader
