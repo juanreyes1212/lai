@@ -89,7 +89,7 @@ const Navigation = () => {
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
-            <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground" asChild>
+            <Button size="sm" asChild>
               <a href="mailto:reyes1212@gmail.com">Get In Touch</a>
             </Button>
           </div>
@@ -141,7 +141,7 @@ const Navigation = () => {
                 </motion.div>
               ))}
               <div className="pt-6 border-t border-border">
-                <Button size="lg" className="w-full bg-primary text-primary-foreground" asChild>
+                <Button size="lg" className="w-full" asChild>
                   <a href="mailto:reyes1212@gmail.com">Get In Touch</a>
                 </Button>
               </div>

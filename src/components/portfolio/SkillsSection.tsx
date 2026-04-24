@@ -1,5 +1,6 @@
-import { motion } from "framer-motion";
 import { Code2, Palette, Zap, Users } from "lucide-react";
+import FadeInOnScroll from "./FadeInOnScroll";
+import SectionHeading from "./SectionHeading";
 
 const skills = [
   {
@@ -32,38 +33,29 @@ const SkillsSection = () => {
   return (
     <section id="skills" className="py-24 px-6">
       <div className="container mx-auto max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            Core <span className="text-gradient">Competencies</span>
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Specialized expertise in modern frontend technologies and enterprise-scale application development
-          </p>
-        </motion.div>
+        <FadeInOnScroll className="mb-16" y={20} duration={0.6}>
+          <SectionHeading
+            title="Core"
+            highlight="Competencies"
+            description="Specialized expertise in modern frontend technologies and enterprise-scale application development"
+            align="center"
+          />
+        </FadeInOnScroll>
 
         <div className="grid md:grid-cols-2 gap-6">
           {skills.map((skill, index) => (
-            <motion.div
+            <FadeInOnScroll
               key={skill.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              viewport={{ once: true }}
+              delay={index * 0.1}
               className="group relative glass rounded-2xl p-8 hover:border-primary/50 transition-all duration-300"
             >
               {/* Gradient background on hover */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${skill.gradient} rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-              
+              <div className={`absolute inset-0 bg-gradient-to-br ${skill.gradient} rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`} aria-hidden="true" />
+
               <div className="relative z-10">
                 <div className="flex items-start gap-6">
                   <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <skill.icon className="h-7 w-7 text-primary" />
+                    <skill.icon className="h-7 w-7 text-primary" aria-hidden="true" />
                   </div>
                   <div className="space-y-2">
                     <h3 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
@@ -75,7 +67,7 @@ const SkillsSection = () => {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </FadeInOnScroll>
           ))}
         </div>
       </div>
