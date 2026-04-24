@@ -29,7 +29,7 @@ const PersonalProject = () => {
         canonical={`/personal/${project.slug}`}
         ogImage={project.image}
       />
-      <main className="pt-32 pb-24 px-6">
+      <main id="main-content" className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-4xl">
           {/* Back Link */}
           <motion.div
