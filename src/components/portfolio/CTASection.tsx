@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
-import { ArrowUpRight, Mail, ExternalLink, MapPin } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowUpRight, Mail, ExternalLink, MapPin, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const CTASection = () => {
   return (
