@@ -7,8 +7,11 @@ import PageHeader from "@/components/portfolio/PageHeader";
 import SEO from "@/components/SEO";
 import { personalProjects } from "@/data/portfolioData";
 import { getStatusColor } from "@/lib/colors";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const Personal = () => {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
     <PageLayout>
       <SEO
@@ -16,7 +19,7 @@ const Personal = () => {
         description="Side projects demonstrating technical exploration, problem-solving, and passion for building useful tools."
         canonical="/personal"
       />
-      <main className="pt-32 pb-24 px-6">
+      <main id="main-content" className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-6xl">
           <PageHeader
             backTo="/"
@@ -31,75 +34,81 @@ const Personal = () => {
             {personalProjects.map((project, index) => (
               <motion.article
                 key={project.slug}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="group glass rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300"
+                {...(prefersReducedMotion
+                  ? { initial: false }
+                  : {
+                      initial: { opacity: 0, y: 30 },
+                      animate: { opacity: 1, y: 0 },
+                      transition: { duration: 0.5, delay: index * 0.1 },
+                    })}
+                className="group glass rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 relative"
               >
-                <Link to={`/personal/${project.slug}`} className="block">
-                  {/* Image */}
-                  <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={project.image}
-                      alt={project.title}
-                      loading="lazy"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
-                    
-                    {/* Status Badge */}
-                    <Badge 
-                      variant="outline" 
-                      className={`absolute top-4 right-4 ${getStatusColor(project.status)}`}
+                {/* Image */}
+                <div className="relative h-48 overflow-hidden">
+                  <img
+                    src={project.image}
+                    alt=""
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" aria-hidden="true" />
+
+                  {/* Status Badge */}
+                  <Badge
+                    variant="outline"
+                    className={`absolute top-4 right-4 ${getStatusColor(project.status)}`}
+                  >
+                    {project.status}
+                  </Badge>
+                </div>
+
+                {/* Content */}
+                <div className="p-6 space-y-4">
+                  <h2 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+                    <Link
+                      to={`/personal/${project.slug}`}
+                      className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm before:absolute before:inset-0 before:content-['']"
                     >
-                      {project.status}
-                    </Badge>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-6 space-y-4">
-                    <h2 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
                       {project.title}
-                    </h2>
+                    </Link>
+                  </h2>
 
-                    <p className="text-muted-foreground text-sm">
-                      {project.description}
-                    </p>
+                  <p className="text-muted-foreground text-sm">
+                    {project.description}
+                  </p>
 
-                    {/* Highlights */}
-                    <ul className="space-y-1">
-                      {project.highlights.map((highlight, i) => (
-                        <li key={i} className="text-xs text-muted-foreground flex items-start gap-2">
-                          <span className="text-primary mt-0.5">•</span>
-                          {highlight}
-                        </li>
-                      ))}
-                    </ul>
+                  {/* Highlights */}
+                  <ul className="list-disc pl-5 space-y-1 marker:text-primary">
+                    {project.highlights.map((highlight) => (
+                      <li key={highlight} className="text-xs text-muted-foreground">
+                        {highlight}
+                      </li>
+                    ))}
+                  </ul>
 
-                    {/* Tech Stack */}
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      {project.tech.map((tech) => (
-                        <Badge key={tech} variant="secondary" className="text-xs">
-                          {tech}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center justify-between pt-2">
-                      <span className="inline-flex items-center text-primary font-medium text-sm">
-                        View Project
-                        <ArrowUpRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-                      </span>
-                      {project.link && (
-                        <span className="text-muted-foreground text-xs flex items-center gap-1">
-                          <ExternalLink className="h-3 w-3" />
-                          Live
-                        </span>
-                      )}
-                    </div>
+                  {/* Tech Stack */}
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {project.tech.map((tech) => (
+                      <Badge key={tech} variant="secondary" className="text-xs">
+                        {tech}
+                      </Badge>
+                    ))}
                   </div>
-                </Link>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="inline-flex items-center text-primary font-medium text-sm">
+                      View Project
+                      <ArrowUpRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" aria-hidden="true" />
+                    </span>
+                    {project.link && (
+                      <span className="text-muted-foreground text-xs flex items-center gap-1">
+                        <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                        Live
+                      </span>
+                    )}
+                  </div>
+                </div>
               </motion.article>
             ))}
           </div>

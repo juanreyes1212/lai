@@ -43,7 +43,11 @@
     --copper: 30 85% 55%;
     --copper-glow: 30 90% 65%;
     --gold: 42 92% 60%;
-    --bronze: 25 60% 40%;
+
+    /* Status / semantic accent tokens (used by badges, status pills) */
+    --success: 142 70% 50%;
+    --info: 199 90% 60%;
+    --warning: 42 92% 60%;
     
     /* Gradients */
     --gradient-copper: linear-gradient(135deg, hsl(30 85% 55%) 0%, hsl(42 92% 60%) 100%);

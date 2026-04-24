@@ -6,8 +6,21 @@ import PageLayout from "@/components/portfolio/PageLayout";
 import BackLink from "@/components/portfolio/BackLink";
 import SEO from "@/components/SEO";
 import { resumeData } from "@/data/portfolioData";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const Resume = () => {
+  const prefersReducedMotion = useReducedMotion();
+  const fade = (delay = 0, y = 30) =>
+    prefersReducedMotion
+      ? { initial: false }
+      : {
+          initial: { opacity: 0, y },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.5, delay },
+        };
+
+  const telHref = `tel:+1${resumeData.phone.replace(/\D/g, "")}`;
+
   return (
     <PageLayout>
       <SEO
@@ -15,17 +28,12 @@ const Resume = () => {
         description="Resume of Juan Reyes — Senior Frontend Developer with 7+ years of experience in React, Vue.js, TypeScript, and design systems."
         canonical="/resume"
       />
-      <main className="pt-32 pb-24 px-6">
+      <main id="main-content" className="pt-32 pb-24 px-6">
         <div className="container mx-auto max-w-4xl">
           {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-12"
-          >
+          <motion.div {...fade(0, 20)} className="mb-12">
             <BackLink to="/" label="Back to Home" />
-            
+
             <div className="glass rounded-2xl p-8 md:p-12">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8">
                 <div>
@@ -33,25 +41,25 @@ const Resume = () => {
                     <span className="text-gradient">{resumeData.name}</span>
                   </h1>
                   <p className="text-xl text-muted-foreground mb-4">{resumeData.title}</p>
-                  
+
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-primary" />
+                      <MapPin className="h-4 w-4 text-primary" aria-hidden="true" />
                       {resumeData.location}
                     </div>
                     <a href={`mailto:${resumeData.email}`} className="flex items-center gap-2 hover:text-primary transition-colors">
-                      <Mail className="h-4 w-4 text-primary" />
+                      <Mail className="h-4 w-4 text-primary" aria-hidden="true" />
                       {resumeData.email}
                     </a>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-primary" />
+                    <a href={telHref} className="flex items-center gap-2 hover:text-primary transition-colors">
+                      <Phone className="h-4 w-4 text-primary" aria-hidden="true" />
                       {resumeData.phone}
-                    </div>
+                    </a>
                   </div>
                 </div>
 
                 <div className="flex gap-3">
-                  <Button className="bg-primary text-primary-foreground" asChild>
+                  <Button asChild>
                     <a href="/resume.pdf" download="Juan_Reyes_Resume.pdf">
                       <Download className="mr-2 h-4 w-4" />
                       Download PDF
@@ -67,20 +75,15 @@ const Resume = () => {
           </motion.div>
 
           {/* Experience */}
-          <motion.section
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="mb-12"
-          >
+          <motion.section {...fade(0.1)} className="mb-12">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-primary" />
+              <span className="w-2 h-2 rounded-full bg-primary" aria-hidden="true" />
               Experience
             </h2>
 
             <div className="space-y-6">
-              {resumeData.experience.map((job, index) => (
-                <div key={index} className="glass rounded-2xl p-6 md:p-8">
+              {resumeData.experience.map((job) => (
+                <div key={`${job.company}-${job.role}`} className="glass rounded-2xl p-6 md:p-8">
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 mb-4">
                     <div>
                       <h3 className="text-xl font-bold text-foreground">{job.role}</h3>
@@ -92,10 +95,9 @@ const Resume = () => {
                     </div>
                   </div>
 
-                  <ul className="space-y-2">
-                    {job.highlights.map((highlight, i) => (
-                      <li key={i} className="text-muted-foreground flex items-start gap-3">
-                        <span className="text-primary mt-1.5 text-xs">●</span>
+                  <ul className="list-disc pl-5 space-y-2 marker:text-primary">
+                    {job.highlights.map((highlight) => (
+                      <li key={highlight} className="text-muted-foreground">
                         {highlight}
                       </li>
                     ))}
@@ -106,14 +108,9 @@ const Resume = () => {
           </motion.section>
 
           {/* Skills */}
-          <motion.section
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mb-12"
-          >
+          <motion.section {...fade(0.2)} className="mb-12">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-primary" />
+              <span className="w-2 h-2 rounded-full bg-primary" aria-hidden="true" />
               Skills
             </h2>
 
@@ -138,20 +135,15 @@ const Resume = () => {
           </motion.section>
 
           {/* Education */}
-          <motion.section
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mb-12"
-          >
+          <motion.section {...fade(0.3)} className="mb-12">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-primary" />
+              <span className="w-2 h-2 rounded-full bg-primary" aria-hidden="true" />
               Education
             </h2>
 
             <div className="glass rounded-2xl p-6 md:p-8">
-              {resumeData.education.map((edu, index) => (
-                <div key={index} className="flex flex-col md:flex-row md:items-center md:justify-between">
+              {resumeData.education.map((edu) => (
+                <div key={edu.school} className="flex flex-col md:flex-row md:items-center md:justify-between">
                   <div>
                     <h3 className="text-lg font-bold text-foreground">{edu.degree}</h3>
                     <p className="text-muted-foreground">{edu.school}</p>
@@ -163,12 +155,7 @@ const Resume = () => {
           </motion.section>
 
           {/* Social Links */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex justify-center gap-4"
-          >
+          <motion.div {...fade(0.4)} className="flex justify-center gap-4">
             <Button variant="outline" size="lg" asChild>
               <a href="https://github.com/juanreyes1212" target="_blank" rel="noopener noreferrer">
                 <Github className="mr-2 h-5 w-5" />
@@ -176,7 +163,7 @@ const Resume = () => {
               </a>
             </Button>
             <Button variant="outline" size="lg" asChild>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">
+              <a href="https://linkedin.com/in/juanreyes" target="_blank" rel="noopener noreferrer">
                 <Linkedin className="mr-2 h-5 w-5" />
                 LinkedIn
               </a>

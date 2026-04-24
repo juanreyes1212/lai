@@ -24,12 +24,12 @@ describe("PageLayout", () => {
     expect(logos.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("does not render SkipToContent by default", () => {
+  it("renders SkipToContent on every page", () => {
     renderLayout();
-    expect(screen.queryByText("Skip to main content")).not.toBeInTheDocument();
+    expect(screen.getByText("Skip to main content")).toBeInTheDocument();
   });
 
-  it("renders SkipToContent when enabled", () => {
+  it("still renders SkipToContent when showSkipToContent prop is passed (back-compat)", () => {
     renderLayout({ showSkipToContent: true });
     expect(screen.getByText("Skip to main content")).toBeInTheDocument();
   });

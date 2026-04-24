@@ -56,7 +56,9 @@ export default {
           glow: "hsl(var(--copper-glow))",
         },
         gold: "hsl(var(--gold))",
-        bronze: "hsl(var(--bronze))",
+        success: "hsl(var(--success))",
+        info: "hsl(var(--info))",
+        warning: "hsl(var(--warning))",
       },
       borderRadius: {
         lg: "var(--radius)",
