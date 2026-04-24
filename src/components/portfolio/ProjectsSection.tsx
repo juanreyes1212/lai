@@ -1,10 +1,11 @@
-import { motion } from "framer-motion";
 import { ArrowUpRight, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { workProjects, personalProjects } from "@/data/portfolioData";
 import { getStatusColor } from "@/lib/colors";
+import FadeInOnScroll from "./FadeInOnScroll";
+import SectionHeading from "./SectionHeading";
 
 const ProjectsSection = () => {
   const featuredWork = workProjects.slice(0, 3);
@@ -14,59 +15,42 @@ const ProjectsSection = () => {
     <section id="work" className="py-24 px-6 bg-muted/30">
       <div className="container mx-auto max-w-6xl">
         {/* Work Projects */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="flex items-end justify-between mb-12"
-        >
-          <div>
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              Featured <span className="text-gradient">Work</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-xl">
-              Enterprise-scale projects showcasing frontend architecture and development excellence
-            </p>
-          </div>
+        <FadeInOnScroll className="flex items-end justify-between mb-12" y={20} duration={0.6}>
+          <SectionHeading
+            title="Featured"
+            highlight="Work"
+            description="Enterprise-scale projects showcasing frontend architecture and development excellence"
+          />
           <Button variant="ghost" className="hidden md:flex items-center gap-2 text-muted-foreground hover:text-foreground" asChild>
             <Link to="/work">
               View All Work
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
-        </motion.div>
+        </FadeInOnScroll>
 
         <div className="grid lg:grid-cols-3 gap-6 mb-20">
           {featuredWork.map((project, index) => (
-            <motion.article
+            <FadeInOnScroll
               key={project.slug}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              viewport={{ once: true }}
-              className="group glass rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300"
+              as="article"
+              delay={index * 0.1}
+              className="group glass rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 relative"
             >
               {/* Image */}
               <div className="relative h-48 overflow-hidden">
                 <img
                   src={project.image}
-                  alt={project.title}
+                  alt=""
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
-                
-                {/* Hover overlay */}
-                <Link 
-                  to={`/work/${project.slug}`}
-                  aria-label={`View ${project.title}`}
-                  className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
-                >
-                  <div className="w-12 h-12 rounded-full bg-foreground/90 flex items-center justify-center">
-                    <ArrowUpRight className="h-5 w-5 text-background" />
-                  </div>
-                </Link>
+                <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" aria-hidden="true" />
+
+                {/* Persistent corner arrow (visible on touch too) */}
+                <div className="absolute top-4 left-4 w-9 h-9 rounded-full bg-background/70 backdrop-blur flex items-center justify-center text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                  <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                </div>
 
                 {/* Featured badge */}
                 {project.featured && (
@@ -83,11 +67,14 @@ const ProjectsSection = () => {
                     {project.company}
                   </Badge>
                 </div>
-                
+
                 <h3 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
-                  <Link to={`/work/${project.slug}`}>{project.title}</Link>
+                  <Link to={`/work/${project.slug}`} className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm before:absolute before:inset-0 before:content-['']">
+                    <span className="sr-only">View </span>
+                    {project.title}
+                  </Link>
                 </h3>
-                
+
                 <p className="text-muted-foreground text-sm line-clamp-2">
                   {project.description}
                 </p>
@@ -105,60 +92,54 @@ const ProjectsSection = () => {
                   )}
                 </div>
               </div>
-            </motion.article>
+            </FadeInOnScroll>
           ))}
         </div>
 
         {/* Personal Projects */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-          className="flex items-end justify-between mb-12"
-        >
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">
-              Personal <span className="font-serif italic text-muted-foreground">Projects</span>
-            </h2>
-            <p className="text-muted-foreground">
-              Side projects exploring new technologies and solving personal challenges
-            </p>
-          </div>
+        <FadeInOnScroll className="flex items-end justify-between mb-12" y={20} duration={0.6}>
+          <SectionHeading
+            title="Personal"
+            highlight="Projects"
+            highlightStyle="serif-muted"
+            size="md"
+            description="Side projects exploring new technologies and solving personal challenges"
+          />
           <Button variant="ghost" className="hidden md:flex items-center gap-2 text-muted-foreground hover:text-foreground" asChild>
             <Link to="/personal">
               View All Projects
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
-        </motion.div>
+        </FadeInOnScroll>
 
         <div className="grid md:grid-cols-2 gap-6">
           {featuredPersonal.map((project, index) => (
-            <motion.article
+            <FadeInOnScroll
               key={project.slug}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              viewport={{ once: true }}
-              className="group glass rounded-2xl p-6 hover:border-primary/50 transition-all duration-300"
+              as="article"
+              delay={index * 0.1}
+              className="group glass rounded-2xl p-6 hover:border-primary/50 transition-all duration-300 relative"
             >
               <div className="flex items-start justify-between mb-4">
-                <Badge 
-                  variant="outline" 
+                <Badge
+                  variant="outline"
                   className={getStatusColor(project.status)}
                 >
                   {project.status}
                 </Badge>
-                <Link to={`/personal/${project.slug}`} aria-label={`View ${project.title}`}>
-                  <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" aria-hidden="true" />
-                </Link>
+                <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" aria-hidden="true" />
               </div>
-              
+
               <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-2">
-                <Link to={`/personal/${project.slug}`}>{project.title}</Link>
+                <Link
+                  to={`/personal/${project.slug}`}
+                  className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm before:absolute before:inset-0 before:content-['']"
+                >
+                  {project.title}
+                </Link>
               </h3>
-              
+
               <p className="text-muted-foreground text-sm mb-4">
                 {project.description}
               </p>
@@ -170,7 +151,7 @@ const ProjectsSection = () => {
                   </Badge>
                 ))}
               </div>
-            </motion.article>
+            </FadeInOnScroll>
           ))}
         </div>
       </div>
