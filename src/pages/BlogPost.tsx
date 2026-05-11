@@ -31,12 +31,28 @@ const BlogPost = () => {
         ogType="article"
         jsonLd={{
           "@context": "https://schema.org",
-          "@type": "BlogPosting",
+          "@type": "Article",
           headline: post.title,
           description: post.excerpt,
-          image: post.image,
+          image: [post.image],
           datePublished: post.date,
-          author: { "@type": "Person", name: "Juan Reyes" },
+          dateModified: post.date,
+          author: {
+            "@type": "Person",
+            name: "Juan Reyes",
+            url: "https://juanreyes.dev",
+          },
+          publisher: {
+            "@type": "Person",
+            name: "Juan Reyes",
+            url: "https://juanreyes.dev",
+          },
+          mainEntityOfPage: {
+            "@type": "WebPage",
+            "@id": `https://juanreyes.dev/blog/${post.slug}`,
+          },
+          articleSection: post.category,
+          keywords: post.tags?.join(", "),
           url: `https://juanreyes.dev/blog/${post.slug}`,
         }}
       />
