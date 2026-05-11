@@ -134,6 +134,72 @@ export const personalProjects = [
 // Blog Posts Data
 export const blogPosts = [
   {
+    slug: "web-fonts-without-cls",
+    title: "Eliminating CLS from Web Fonts Without Switching to System Stacks",
+    category: "Performance",
+    excerpt: "Why @import in CSS is the slowest possible way to load Google Fonts, and how preconnect + a plain <link> tag fixed first-paint and CLS without giving up Sora and Instrument Serif.",
+    content: `I like the typography on this site too much to fall back to a system font stack. So instead of switching, I fixed the loading. Here's the actual sequence of changes — and the trap I almost fell into.
+
+## The original setup
+
+Fonts were loaded the lazy way: a single \`@import\` at the top of \`index.css\`.
+
+\`\`\`css
+@import url('https://fonts.googleapis.com/css2?family=Sora...');
+\`\`\`
+
+This is the worst-case path for the browser:
+
+1. HTML parses, finds \`<link rel="stylesheet">\` to my CSS bundle.
+2. Bundle downloads, parses, *then* sees the \`@import\`.
+3. Browser issues a second request to \`fonts.googleapis.com\`.
+4. That CSS arrives, references \`fonts.gstatic.com\`, opens *another* connection.
+5. Font files finally start downloading.
+
+Three serial round-trips before a glyph is on screen. On a cold mid-tier phone, that's most of a second.
+
+## Step 1 — Move to <link> tags
+
+Putting the stylesheet in \`index.html\` lets the browser discover it during initial HTML parsing, in parallel with the JS bundle:
+
+\`\`\`html
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Sora..."
+/>
+\`\`\`
+
+The two \`preconnect\` hints open the TCP + TLS handshakes early so the actual stylesheet and font requests don't pay that cost. The \`crossorigin\` on the gstatic preconnect is *not* optional — without it the connection isn't reused for the font fetch.
+
+## Step 2 — Keep font-display: swap
+
+Already in the URL (\`&display=swap\`), but worth restating: \`swap\` shows fallback text immediately and swaps in the web font when ready. The trade-off is a Flash of Unstyled Text (FOUT). With \`block\`, you get invisible text for up to 3 seconds — much worse for LCP. \`swap\` wins for content sites.
+
+## The trap: should you preload the font files?
+
+Tempting. \`<link rel="preload" as="font">\` skips the CSS round-trip and starts the font download immediately. But:
+
+- You have to know the exact \`woff2\` URL Google generates, which can change.
+- You preload one weight; the others still wait.
+- If the font ends up unused (a route that never renders, say), you've wasted bytes.
+
+I preload the *stylesheet* (\`as="style"\`) instead. That's safe, version-stable, and gets the same parallelism win.
+
+## What about CLS?
+
+The Sora fallback (system sans) and Instrument Serif fallback (system serif) have similar metrics for body sizes — the swap is barely visible. For headings, where the difference matters more, you can use \`size-adjust\`, \`ascent-override\`, and \`descent-override\` in a custom \`@font-face\` block to make the fallback occupy the same box as the real font. I didn't need it here, but it's the next lever if Lighthouse flags CLS later.
+
+## Net result
+
+LCP improvement on this site: about 200ms on a throttled "Slow 4G" run. Not life-changing on its own — but stacked with route-level code splitting (the previous post) it adds up.`,
+    date: "May 11, 2026",
+    readTime: "5 min read",
+    tags: ["Web Fonts", "CLS", "Core Web Vitals"],
+    image: "https://images.unsplash.com/photo-1499744937866-d7e566a20a61?w=800&h=400&fit=crop",
+  },
+  {
     slug: "spa-seo-checklist",
     title: "A Pragmatic SEO Checklist for a React SPA",
     category: "SEO",
