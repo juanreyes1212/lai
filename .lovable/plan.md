@@ -1,101 +1,130 @@
+## Roadmap: Independent Checkpoint Merges (with companion blog posts)
 
-
-## Codebase Audit: UX, Styling, Code Quality & Accessibility
-
-Below are findings grouped by category, each with severity (🔴 high / 🟡 medium / 🟢 low) and a concrete fix. No code changes yet — pick which items you want to apply.
+Each checkpoint is self-contained — it can be merged, reverted, or skipped without affecting the others. **Each checkpoint also ships a companion blog post** added to `src/data/portfolioData.ts` (`blogPosts` array) documenting what was built, why, trade-offs, and learning points. Posts use the existing markdown pipeline (`MarkdownRenderer`) and follow the existing `BlogPost` shape (slug, title, excerpt, category, date, readTime, image, tags, content).
 
 ---
 
-### Accessibility
+### Checkpoint 1 — Route-level code splitting
+**Code scope:** `src/components/AnimatedRoutes.tsx`
+- Convert page imports to `React.lazy()`, wrap `<Routes>` in `<Suspense fallback={<PageSkeleton />}>` (wires up the existing dead component).
 
-**🔴 Nested interactive elements (Work, Blog, Projects sections)**
-`<Link>` wraps the entire card AND the inner `<h2>/<h3>` is also a `<Link>` to the same route (Projects card lines 87-89). Screen readers announce duplicate links; HTML spec disallows nested `<a>`. Fix: keep one anchor per card — either the card-wrapping link or a heading link, not both.
-
-**🔴 Decorative motion not gated by `prefers-reduced-motion`**
-`HeroSection`, `ProjectsSection`, `CTASection`, `Resume` all use `motion.*` with `initial/animate` but ignore the `useReducedMotion()` hook that already exists. Users with vestibular sensitivity still see slide-ups and infinite floating orbs. Fix: short-circuit `initial`/looping `animate` props when the hook returns true. The global CSS `@media (prefers-reduced-motion)` only disables CSS animations, not Framer Motion.
-
-**🟡 Missing `<h1>` on Resume "page-level" heading semantics**
-Resume has an `<h1>` for the name, but it sits inside a `glass` card with the visual page title implicit. Fine, but the page lacks a descriptive `<main id="main-content">` skip target on most pages — only `Index` sets `id="main-content"`. Skip-to-content only works on the homepage. Fix: add `id="main-content"` to `<main>` in every page or move it to `PageLayout`.
-
-**🟡 Icon-only "Clear search" button has no visible focus contrast**
-`Blog.tsx` line 87-94 — the X button uses `hover:text-foreground` but no `focus-visible` styling beyond the global outline. Fine functionally, but inconsistent with other interactive elements that explicitly add `focus-visible:ring-2`.
-
-**🟢 Contact info in Resume not all interactive**
-Phone and location are plain text; phone should be a `tel:` link, location is fine as text. Email is already linked.
+**Blog post:** *"Shipping Faster First Paint with React.lazy + Suspense"*
+- Category: Performance · Tags: React, Vite, Suspense
+- Learning points: when lazy hurts vs helps, picking a fallback that doesn't cause layout shift, route chunks vs component chunks, measuring with Lighthouse before/after.
 
 ---
 
-### UX
+### Checkpoint 2 — SEO: sitemap, robots, Article JSON-LD
+**Code scope:** `public/sitemap.xml` (or Vite plugin), `public/robots.txt`, `src/pages/BlogPost.tsx` JSON-LD via existing `<SEO>`.
 
-**🟡 "Download Resume" button on CTASection links to `/resume` page, not the PDF**
-Inconsistent with the actual Download button on the Resume page. Either rename to "View Resume" or point directly to `/resume.pdf`.
-
-**🟡 Project cards have hover overlay that hides on touch devices**
-`ProjectsSection` line 60-69 — the arrow-circle overlay only appears on `:hover`, invisible on mobile. The whole card is already a link via the title, but the visual affordance is lost on touch. Fix: show a persistent small arrow icon on the card corner (already done in Personal cards — apply same pattern to Work cards).
-
-**🟡 Blog search lacks debouncing & empty-state guidance**
-Filtering runs on every keystroke (fine for small lists, but worth a `useDeferredValue`). Empty state says "No articles found" but doesn't echo the query: "No articles match 'foo'" is more helpful.
-
-**🟢 Hero animated orb runs forever**
-Infinite Framer animations drain battery on mobile. Combine with reduced-motion fix above.
-
-**🟢 No loading/skeleton state for route transitions**
-`PageSkeleton.tsx` exists but isn't wired into `AnimatedRoutes`. Worth using with `Suspense` if routes are lazy-loaded, otherwise remove the dead component.
+**Blog post:** *"A Pragmatic SEO Checklist for a React SPA"*
+- Category: SEO · Tags: SEO, JSON-LD, Sitemaps
+- Learning points: why SPAs need explicit sitemaps, Article vs BlogPosting schema, validating with Rich Results Test, robots.txt gotchas.
 
 ---
 
-### Styling / Design System
+### Checkpoint 3 — Font + asset loading optimization
+**Code scope:** `index.html`, `src/index.css`
+- Move Google Fonts to `<link rel="preconnect">` + stylesheet, ensure `font-display: swap`, preload hero image.
 
-**🟡 Buttons re-declare default variant classes**
-`HeroSection`, `Resume`, `CTASection`, `Navigation` all pass `className="bg-primary hover:bg-primary/90 text-primary-foreground"` — that's literally the `default` variant. Drop the className; use `variant="default"` (the default).
-
-**🟡 Outline buttons re-declare hover styles**
-`className="border-border/50 hover:border-primary/50 hover:bg-primary/5"` appears 3+ times. Either make this a new button variant (e.g. `variant="outlineSubtle"`) in `buttonVariants` or accept the default `outline` variant.
-
-**🟡 Badge color helpers are stringly-typed**
-`getStatusColor`/`getCategoryColor` return raw Tailwind classes with hard-coded color names (`green-500`, `purple-500`) that bypass the design system tokens (`--primary`, `--accent`, etc.). Consider mapping to semantic tokens or adding `--success`, `--info`, `--warning` to `index.css`.
-
-**🟡 Inconsistent bullet markers**
-Resume uses `●` (line 98), Work uses `•` (line 81). Pick one. Better: use `<ul className="list-disc pl-5">` and let the browser render markers.
-
-**🟢 Glass utility duplicated visually**
-`glass` and `glass-strong` differ only by opacity/blur intensity — fine, but the cards then add `rounded-2xl` everywhere. Bake the radius into the `glass` utility or create a `card-glass` class.
-
-**🟢 Unused tokens in `index.css`**
-`--bronze`, `--copper-glow` — search confirms only `--copper-glow` is referenced via `copper.glow` in tailwind config but no component uses it. Remove if truly unused.
+**Blog post:** *"Eliminating CLS from Web Fonts Without Switching to System Stacks"*
+- Category: Performance · Tags: Web Fonts, CLS, Core Web Vitals
+- Learning points: `@import` vs `<link>` cost, `font-display` trade-offs, `size-adjust`/fallback metrics, when preload is harmful.
 
 ---
 
-### Code Quality
+### Checkpoint 4 — Responsive images with `srcset`
+**Code scope:** project/blog card images; introduce `<ResponsiveImage>` wrapper.
 
-**🟡 Repeated motion props across pages**
-Every section uses identical `initial={{ opacity: 0, y: 30 }} whileInView={{...}} viewport={{ once: true }}`. Extract a `<FadeInOnScroll>` wrapper or a `motionPresets.ts` constants file.
-
-**🟡 Repeated section heading pattern**
-"Featured Work / Personal Projects / Skills / Experience / Education" all use `text-2xl/3xl font-bold` with optional gradient span. Extract a `<SectionHeading title highlight />` shared component.
-
-**🟡 Index keys (`key={index}`) used in Resume**
-Lines 82, 96, 153 — using array index as key. Fine here since lists are static, but switch to stable IDs (`job.company + job.role`, `edu.school`) for resilience.
-
-**🟡 `Footer.tsx` repeats anchor markup 3 times**
-Same className soup for each social link. Map over an array `[{ icon, href, label }]`.
-
-**🟡 Twitter link in Footer points to `https://twitter.com`** (no profile path) — broken link or placeholder.
-
-**🟢 `tailwind.config.lov.json` exists alongside `tailwind.config.ts`** — verify it's not stale.
-
-**🟢 Mixed `<motion.section>` vs `<motion.div>` for the same purpose** — pick one for consistency.
+**Blog post:** *"Responsive Images Without an Image CDN"*
+- Category: Performance · Tags: Images, srcset, LCP
+- Learning points: `srcset` vs `sizes` mental model, picking breakpoints, AVIF/WebP fallback, lazy + decoding=async.
 
 ---
 
-### Suggested Priority Order
+### Checkpoint 5 — Repo hygiene
+**Code scope:** delete `tailwind.config.lov.json` if stale, prune unused tokens (`--bronze`, `--copper-glow`), drop deprecated `showSkipToContent` prop.
 
-1. Fix nested `<a>` in Work/Blog/Projects cards (a11y blocker).
-2. Wire `useReducedMotion()` into all `motion.*` components (a11y).
-3. Move skip-to-content target into `PageLayout` so it works on every page.
-4. Fix CTA "Download Resume" link to actually download the PDF.
-5. Refactor: `SectionHeading`, `FadeInOnScroll`, Footer social-link map, dedupe button variants.
-6. Replace index keys, normalize bullet markers, prune unused CSS tokens.
+**Blog post:** *"YAGNI in Practice: A Quarterly Dead-Code Sweep"*
+- Category: Engineering · Tags: Refactoring, Tailwind, DX
+- Learning points: how dead tokens leak through autocomplete, deprecation comments as a tool, safe-deletion workflow with grep + types.
 
-Reply with which items you want me to implement (or "all of category X") and I'll execute.
+---
 
+### Checkpoint 6 — Accessibility automation
+**Code scope:** add `vitest-axe`, `src/test/a11y.test.tsx` covering each route.
+
+**Blog post:** *"Catching A11y Regressions in CI with vitest-axe"*
+- Category: Accessibility · Tags: a11y, Testing, Vitest
+- Learning points: what axe can and can't catch, balancing axe with manual SR checks, ignoring rules responsibly, per-route smoke pattern.
+
+---
+
+### Checkpoint 7 — Privacy-friendly analytics
+**Code scope:** snippet in `index.html`, `useAnalytics` hook firing on route change, `VITE_ANALYTICS_DOMAIN`.
+
+**Blog post:** *"Cookie-less Analytics for a Personal Site"*
+- Category: Engineering · Tags: Analytics, Privacy, Plausible
+- Learning points: GDPR posture without banners, SPA pageview tracking, what events are worth instrumenting on a portfolio.
+
+---
+
+### Checkpoint 8 — Blog content migration to MDX
+**Code scope:** `@mdx-js/rollup`, posts moved to `src/content/blog/*.mdx`, `BlogPost.tsx` dynamic import, slim index in `portfolioData`.
+
+**Blog post:** *"From Stringly-Typed Markdown to MDX Without Breaking the Build"*
+- Category: Engineering · Tags: MDX, Vite, Content
+- Learning points: frontmatter parsing, dynamic import maps in Vite, custom MDX components reusing existing renderers, migration safety net.
+
+---
+
+### Checkpoint 9 — Light mode toggle
+**Code scope:** `next-themes`, light HSL tokens in `index.css`, toggle in `Navigation.tsx`.
+
+**Blog post:** *"Designing a Second Theme After Committing to One"*
+- Category: Design Systems · Tags: Theming, HSL, Tailwind
+- Learning points: why HSL tokens make this trivial, finding hardcoded colors that slipped through, contrast audits per theme, persisting choice without flash.
+
+---
+
+### Checkpoint 10 — Cmd+K command palette
+**Code scope:** shadcn `command`, `<CommandPalette>` mounted in `PageLayout`, indexed against `portfolioData`.
+
+**Blog post:** *"Adding a Cmd+K Palette as a Single Source of Navigation Truth"*
+- Category: UX · Tags: Search, Keyboard, shadcn
+- Learning points: indexing strategy for small sites, fuzzy match vs prefix, accessible dialog patterns, shortcut conflicts.
+
+---
+
+### Checkpoint 11 — Contact form (Lovable Cloud + Resend)
+**Code scope:** enable Cloud, edge function `send-contact-email`, `RESEND_API_KEY`, `/contact` route, link from `CTASection`.
+
+**Blog post:** *"A Spam-Resistant Contact Form Without a Backend Server"*
+- Category: Engineering · Tags: Edge Functions, Resend, Forms
+- Learning points: honeypot + rate limit basics, server-side validation with zod, Resend deliverability, environment secrets hygiene.
+
+---
+
+### Checkpoint 12 — E2E tests + CI
+**Code scope:** Playwright config, `e2e/*.spec.ts` per route, `.github/workflows/ci.yml` (typecheck + vitest + playwright).
+
+**Blog post:** *"The Smallest Useful Playwright Suite for a Portfolio"*
+- Category: Engineering · Tags: Playwright, CI, Testing
+- Learning points: smoke vs critical-path coverage, headless reliability, caching browsers in GH Actions, what NOT to E2E test.
+
+---
+
+### Suggested merge order
+```text
+1 → 2 → 3 → 5    (quick wins, low risk)
+4 → 6 → 7        (medium, still isolated)
+8 → 9 → 10       (feature work)
+11 → 12          (largest investments)
+```
+
+### Per-checkpoint definition of done
+- Code change merged with no regressions to existing tests/typecheck.
+- Companion blog post added to `blogPosts` with full markdown body, appears on `/blog` listing and at its slug.
+- If the checkpoint introduces a new pattern (e.g. `<ResponsiveImage>`, `FadeInOnScroll` analogue), the blog post links to the file.
+
+Reply "approve" or pick which checkpoint to start with.
