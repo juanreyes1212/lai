@@ -159,7 +159,7 @@ const BlogPost = () => {
                     className="group glass rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300"
                   >
                     <div className="relative h-40 overflow-hidden">
-                      <img
+                      <ResponsiveImage
                         src={relatedPost.image}
                         alt={relatedPost.title}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
