@@ -6,6 +6,7 @@ import PageLayout from "@/components/portfolio/PageLayout";
 import BackLink from "@/components/portfolio/BackLink";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import SEO from "@/components/SEO";
+import ResponsiveImage from "@/components/ResponsiveImage";
 import { blogPosts } from "@/data/portfolioData";
 import { getCategoryColor } from "@/lib/colors";
 
