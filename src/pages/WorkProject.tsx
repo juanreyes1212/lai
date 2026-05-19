@@ -81,9 +81,11 @@ const WorkProject = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="relative rounded-2xl overflow-hidden mb-12"
           >
-            <img
+            <ResponsiveImage
               src={project.image}
               alt={project.title}
+              sizes="(min-width: 896px) 896px, 100vw"
+              loading="eager"
               className="w-full h-64 md:h-96 object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent" />
