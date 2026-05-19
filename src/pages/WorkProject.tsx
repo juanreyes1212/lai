@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import PageLayout from "@/components/portfolio/PageLayout";
 import BackLink from "@/components/portfolio/BackLink";
 import SEO from "@/components/SEO";
+import ResponsiveImage from "@/components/ResponsiveImage";
 import { workProjects } from "@/data/portfolioData";
 
 const WorkProject = () => {
