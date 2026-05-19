@@ -236,7 +236,7 @@ const Blog = () => {
                   >
                     {/* Image */}
                     <div className="relative h-40 overflow-hidden">
-                      <img
+                      <ResponsiveImage
                         src={post.image}
                         alt=""
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
