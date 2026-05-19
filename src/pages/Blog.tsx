@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import PageLayout from "@/components/portfolio/PageLayout";
 import PageHeader from "@/components/portfolio/PageHeader";
 import SEO from "@/components/SEO";
+import ResponsiveImage from "@/components/ResponsiveImage";
 import { blogPosts } from "@/data/portfolioData";
 import { getCategoryColor } from "@/lib/colors";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -171,9 +172,11 @@ const Blog = () => {
                 >
                   <div className="grid lg:grid-cols-2 gap-0">
                     <div className="relative h-64 lg:h-80 overflow-hidden">
-                      <img
+                      <ResponsiveImage
                         src={featuredPost.image}
                         alt=""
+                        sizes="(min-width: 1024px) 50vw, 100vw"
+                        loading="eager"
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/80 lg:block hidden" aria-hidden="true" />
@@ -233,7 +236,7 @@ const Blog = () => {
                   >
                     {/* Image */}
                     <div className="relative h-40 overflow-hidden">
-                      <img
+                      <ResponsiveImage
                         src={post.image}
                         alt=""
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"

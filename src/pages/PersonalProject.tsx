@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import PageLayout from "@/components/portfolio/PageLayout";
 import BackLink from "@/components/portfolio/BackLink";
 import SEO from "@/components/SEO";
+import ResponsiveImage from "@/components/ResponsiveImage";
 import { personalProjects } from "@/data/portfolioData";
 import { getStatusColor } from "@/lib/colors";
 
@@ -73,9 +74,11 @@ const PersonalProject = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="relative rounded-2xl overflow-hidden mb-12"
           >
-            <img
+            <ResponsiveImage
               src={project.image}
               alt={project.title}
+              sizes="(min-width: 896px) 896px, 100vw"
+              loading="eager"
               className="w-full h-64 md:h-96 object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent" />
@@ -148,7 +151,7 @@ const PersonalProject = () => {
                     className="group glass rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300"
                   >
                     <div className="relative h-40 overflow-hidden">
-                      <img
+                      <ResponsiveImage
                         src={relatedProject.image}
                         alt={relatedProject.title}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"

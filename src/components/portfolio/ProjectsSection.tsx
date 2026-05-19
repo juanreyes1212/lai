@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { workProjects, personalProjects } from "@/data/portfolioData";
 import { getStatusColor } from "@/lib/colors";
+import ResponsiveImage from "@/components/ResponsiveImage";
 import FadeInOnScroll from "./FadeInOnScroll";
 import SectionHeading from "./SectionHeading";
 
@@ -39,10 +40,9 @@ const ProjectsSection = () => {
             >
               {/* Image */}
               <div className="relative h-48 overflow-hidden">
-                <img
+                <ResponsiveImage
                   src={project.image}
                   alt=""
-                  loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" aria-hidden="true" />
