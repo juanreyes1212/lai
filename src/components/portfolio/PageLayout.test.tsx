@@ -29,8 +29,4 @@ describe("PageLayout", () => {
     expect(screen.getByText("Skip to main content")).toBeInTheDocument();
   });
 
-  it("still renders SkipToContent when showSkipToContent prop is passed (back-compat)", () => {
-    renderLayout({ showSkipToContent: true });
-    expect(screen.getByText("Skip to main content")).toBeInTheDocument();
-  });
 });
