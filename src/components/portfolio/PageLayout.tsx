@@ -4,8 +4,6 @@ import SkipToContent from "@/components/SkipToContent";
 
 interface PageLayoutProps {
   children: React.ReactNode;
-  /** Deprecated — skip link now renders on every page. Kept for backwards compat. */
-  showSkipToContent?: boolean;
 }
 
 const PageLayout = ({ children }: PageLayoutProps) => {
