@@ -134,6 +134,68 @@ export const personalProjects = [
 // Blog Posts Data
 export const blogPosts = [
   {
+    slug: "yagni-dead-code-sweep",
+    title: "YAGNI in Practice: A Quarterly Dead-Code Sweep",
+    category: "Engineering",
+    excerpt: "How a deprecated prop, an unused CSS variable, and a phantom Tailwind token survived three refactors — and the 15-minute workflow that finds and kills them safely.",
+    content: `Every codebase accumulates ghosts: a prop nobody passes, a CSS variable nothing reads, a config file from an experiment that got reverted everywhere except on disk. They're harmless until they aren't — they leak into autocomplete, mislead the next contributor, and rot the design system.
+
+Here's the sweep I ran on this repo, and the workflow that keeps it cheap.
+
+## What I found
+
+Three categories, all classic:
+
+1. **A deprecated prop kept "for back-compat"** — \`<PageLayout showSkipToContent>\`. The skip link had moved to render unconditionally months ago. The prop did nothing. Two pages still passed it.
+2. **A design token nothing consumed** — \`--copper-glow\` in \`index.css\`, exposed as \`copper.glow\` in \`tailwind.config.ts\`. Greppable, but no consumer in any component.
+3. **A stale config file from a one-off experiment** — already gone in this case, but the kind of artifact that lingers in \`tailwind.config.lov.json\`-style sidecars.
+
+## The 15-minute workflow
+
+\`\`\`bash
+# 1. List candidates (deprecated comments, unused tokens, sidecar configs)
+grep -rn "Deprecated\\|@deprecated" src
+grep -rn -- "--copper-glow\\|--bronze" src tailwind.config.ts
+
+# 2. Confirm zero consumers
+grep -rn "copper-glow\\|copper\\.glow\\|showSkipToContent" src
+\`\`\`
+
+If grep + the TypeScript compiler both come back clean after deletion, it's safe. The compiler is the real guardrail — delete the prop from the interface and any consumer lights up immediately.
+
+## Why "Deprecated, kept for back-compat" is a trap
+
+Inside a single-developer repo, there is no external consumer. The prop's only effect is to give future-you a false sense that something depends on it. Two outcomes:
+
+- You eventually delete it anyway (3 months later, with the same grep).
+- You build new code on top of the assumption that it does something — and now removal becomes a real refactor.
+
+Both are worse than just deleting it the first time.
+
+## Tokens are sneakier than props
+
+A removed prop is a TypeScript error. A removed CSS variable is a silent broken style — *if* something used it. The safety check is the same grep, but with two phrasings:
+
+\`\`\`bash
+grep -rn -- "--copper-glow" src       # raw CSS var name
+grep -rn "copper-glow\\|copper\\.glow" src  # Tailwind class form
+\`\`\`
+
+Tailwind's \`copper.glow\` becomes the class \`text-copper-glow\` / \`bg-copper-glow\`. Search both notations; if neither matches, it's dead.
+
+## What stays
+
+Tokens that *might* get used soon (\`--success\`, \`--info\`, \`--warning\` on this site) earn their keep because they're part of a coherent semantic set, even if only one consumer exists today. Dead-code sweeps target tokens with **zero consumers and no semantic siblings** — orphans, not minorities.
+
+## Cadence
+
+Quarterly works. Anything more frequent and you're sweeping the same ground; anything less and the rot compounds. Pair it with the dependency audit and it's one ~30-minute hygiene block per quarter.`,
+    date: "May 20, 2026",
+    readTime: "4 min read",
+    tags: ["Refactoring", "Tailwind", "DX"],
+    image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&h=400&fit=crop",
+  },
+  {
     slug: "responsive-images-without-cdn",
     title: "Responsive Images Without an Image CDN",
     category: "Performance",

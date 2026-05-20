@@ -9,7 +9,7 @@ import SEO from "@/components/SEO";
 
 const Index = () => {
   return (
-    <PageLayout showSkipToContent>
+    <PageLayout>
       <SEO
         canonical="/"
         jsonLd={{

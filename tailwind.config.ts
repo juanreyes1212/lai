@@ -53,7 +53,6 @@ export default {
         },
         copper: {
           DEFAULT: "hsl(var(--copper))",
-          glow: "hsl(var(--copper-glow))",
         },
         gold: "hsl(var(--gold))",
         success: "hsl(var(--success))",
