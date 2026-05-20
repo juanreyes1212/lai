@@ -23,7 +23,7 @@ const BlogPost = () => {
     .slice(0, 2);
 
   return (
-    <PageLayout showSkipToContent>
+    <PageLayout>
       <SEO
         title={post.title}
         description={post.excerpt}
