@@ -17,7 +17,9 @@ import NotFound from "@/pages/NotFound";
 import { workProjects, personalProjects, blogPosts } from "@/data/portfolioData";
 
 declare module "vitest" {
-  interface Assertion<T = unknown> extends AxeMatchers {}
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface Assertion extends AxeMatchers {}
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface AsymmetricMatchersContaining extends AxeMatchers {}
 }
 
