@@ -134,6 +134,16 @@ export const personalProjects = [
 // Blog Posts Data
 export const blogPosts = [
   {
+    slug: "stringly-typed-markdown-to-mdx",
+    title: "From Stringly-Typed Markdown to MDX Without Breaking the Build",
+    category: "Engineering",
+    excerpt: "23 blog posts lived inside a 1,951-line TypeScript file as multi-line template literals. Here is how I extracted them to MDX, kept a slim metadata index, and lazy-loaded each post — without touching the rendering layer.",
+    date: "May 22, 2026",
+    readTime: "6 min read",
+    image: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=800&h=400&fit=crop",
+    tags: ["MDX","Vite","Content"],
+  },
+  {
     slug: "cookieless-analytics-personal-site",
     title: "Cookie-less Analytics for a Personal Site",
     category: "Engineering",
