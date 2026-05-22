@@ -132,7 +132,7 @@ const BlogPost = () => {
             <div className="glass rounded-2xl p-8 mb-8">
               {MdxContent ? (
                 <MDXProvider components={mdxComponents}>
-                  <Suspense fallback={<div className="h-32 animate-pulse bg-muted/20 rounded" aria-label="Loading article" />}>
+                  <Suspense fallback={<div role="status" aria-label="Loading article" className="h-32 animate-pulse bg-muted/20 rounded" />}>
                     <MdxContent />
                   </Suspense>
                 </MDXProvider>
