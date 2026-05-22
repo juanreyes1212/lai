@@ -28,7 +28,7 @@ The original `react-helmet` library is no longer maintained and has issues with 
 
 ```typescript
 // App.tsx — wrap your app once
-import \{ HelmetProvider \} from "react-helmet-async";
+import { HelmetProvider } from "react-helmet-async";
 
 const App = () => (
   <HelmetProvider>
@@ -44,7 +44,7 @@ const App = () => (
 Instead of scattering `<Helmet>` tags across every page, I built a single `<SEO>` component that handles all meta tags consistently:
 
 ```typescript
-interface SEOProps \{
+interface SEOProps {
   title?: string;
   description?: string;
   canonical?: string;
@@ -52,26 +52,26 @@ interface SEOProps \{
   ogType?: string;
   jsonLd?: Record<string, unknown>;
   noindex?: boolean;
-\}
+}
 
-const SEO = (\{ title, description, canonical, ogImage, ogType = "website", jsonLd, noindex \}: SEOProps) => \{
-  const fullTitle = title ? `$\{title\} | Juan Reyes` : "Juan Reyes | Senior Frontend Developer";
+const SEO = ({ title, description, canonical, ogImage, ogType = "website", jsonLd, noindex }: SEOProps) => {
+  const fullTitle = title ? `${title} | Juan Reyes` : "Juan Reyes | Senior Frontend Developer";
 
   return (
     <Helmet>
-      <title>\{fullTitle\}</title>
-      <meta name="description" content=\{description\} />
-      <link rel="canonical" href=\{`https://juanreyes.dev$\{canonical\}`\} />
-      <meta property="og:title" content=\{fullTitle\} />
-      <meta property="og:description" content=\{description\} />
-      \{jsonLd && (
+      <title>{fullTitle}</title>
+      <meta name="description" content={description} />
+      <link rel="canonical" href={`https://juanreyes.dev${canonical}`} />
+      <meta property="og:title" content={fullTitle} />
+      <meta property="og:description" content={description} />
+      {jsonLd && (
         <script type="application/ld+json">
-          \{JSON.stringify(jsonLd)\}
+          {JSON.stringify(jsonLd)}
         </script>
-      )\}
+      )}
     </Helmet>
   );
-\};
+};
 ```
 
 This approach gives every page unique, descriptive metadata with minimal boilerplate.
@@ -83,14 +83,14 @@ JSON-LD (JavaScript Object Notation for Linked Data) is Google's preferred forma
 ### Person Schema (Home Page)
 
 ```json
-\{
+{
   "@context": "https://schema.org",
   "@type": "Person",
   "name": "Juan Reyes",
   "jobTitle": "Senior Frontend Developer",
   "url": "https://juanreyes.dev",
   "knowsAbout": ["React.js", "Vue.js", "TypeScript"]
-\}
+}
 ```
 
 This tells Google: "This page is about a specific person with these skills." It can power knowledge panels and rich results.
@@ -98,14 +98,14 @@ This tells Google: "This page is about a specific person with these skills." It 
 ### BlogPosting Schema (Blog Posts)
 
 ```json
-\{
+{
   "@context": "https://schema.org",
   "@type": "BlogPosting",
   "headline": "Article Title",
   "description": "Article excerpt...",
   "datePublished": "2025-03-15",
-  "author": \{ "@type": "Person", "name": "Juan Reyes" \}
-\}
+  "author": { "@type": "Person", "name": "Juan Reyes" }
+}
 ```
 
 This enables rich snippets in search results — showing the author, date, and description directly in Google.

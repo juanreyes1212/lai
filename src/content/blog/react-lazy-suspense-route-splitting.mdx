@@ -28,11 +28,11 @@ const Resume = lazy(() => import("@/pages/Resume"));
 
 <Route
   path="/resume"
-  element=\{
-    <Suspense fallback=\{<PageSkeleton variant="resume" />\}>
+  element={
+    <Suspense fallback={<PageSkeleton variant="resume" />}>
       <Resume />
     </Suspense>
-  \}
+  }
 />
 ```
 
@@ -50,7 +50,7 @@ Lazy is a bet that the deferred chunk won't be needed soon. If it *is* needed so
 The other footgun is the `fallback`. If your fallback is shorter than the real page, the browser paints a stub, then jumps when the real content arrives — that's Cumulative Layout Shift. I reused the existing `<PageSkeleton />` component with the same variant the route already uses for its enter animation:
 
 ```tsx
-<Suspense fallback=\{<PageSkeleton variant="grid" />\}>
+<Suspense fallback={<PageSkeleton variant="grid" />}>
   <Blog />
 </Suspense>
 ```

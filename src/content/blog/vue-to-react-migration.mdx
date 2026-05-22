@@ -37,12 +37,12 @@ Use module federation or a micro-frontend approach to run both frameworks:
 
 ```javascript
 // Shell application loads either Vue or React
-const loadComponent = (framework, path) => \{
-  if (framework === 'vue') \{
+const loadComponent = (framework, path) => {
+  if (framework === 'vue') {
     return loadVueComponent(path);
-  \}
+  }
   return loadReactComponent(path);
-\};
+};
 ```
 
 ## Component Migration Strategy

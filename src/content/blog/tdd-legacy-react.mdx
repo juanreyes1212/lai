@@ -21,13 +21,13 @@ The project had no test runner, no testing utilities, and no CI gate for tests. 
 
 ```typescript
 // vitest.config.ts
-export default defineConfig(\{
-  test: \{
+export default defineConfig({
+  test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
-  \},
-\});
+  },
+});
 ```
 
 ## The Red-Green-Refactor Loop
@@ -71,13 +71,13 @@ TDD forces you to write components that are testable by design:
 
 ```typescript
 // Testing behavior, not implementation
-it('closes mobile menu on route change', () => \{
-  render(<Navigation />, \{ wrapper: MemoryRouter \});
+it('closes mobile menu on route change', () => {
+  render(<Navigation />, { wrapper: MemoryRouter });
   fireEvent.click(screen.getByLabelText(/open menu/i));
   expect(screen.getByRole('navigation')).toBeVisible();
   // Simulate route change...
   expect(screen.queryByRole('navigation')).not.toBeVisible();
-\});
+});
 ```
 
 ## Lessons Learned

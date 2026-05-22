@@ -26,10 +26,10 @@ Each category has optimal solutions.
 React Query has revolutionized how we handle server state:
 
 ```typescript
-const \{ data, isLoading, error \} = useQuery(\{
+const { data, isLoading, error } = useQuery({
   queryKey: ['users'],
   queryFn: fetchUsers,
-\});
+});
 ```
 
 It handles caching, background refetching, optimistic updates, and more.
@@ -39,10 +39,10 @@ It handles caching, background refetching, optimistic updates, and more.
 Zustand provides a minimal, hook-based API:
 
 ```typescript
-const useStore = create((set) => (\{
+const useStore = create((set) => ({
   count: 0,
-  increment: () => set((state) => (\{ count: state.count + 1 \})),
-\}));
+  increment: () => set((state) => ({ count: state.count + 1 })),
+}));
 ```
 
 Perfect for global client state without boilerplate.

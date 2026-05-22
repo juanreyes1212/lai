@@ -22,10 +22,10 @@ axe-core can run in any JavaScript environment. I wrote a script that:
 import axe from 'axe-core';
 
 const results = await axe.run(document.body);
-console.log(`Found $\{results.violations.length\} violations`);
-results.violations.forEach(v => \{
-  console.log(`[$\{v.impact\}] $\{v.id\}: $\{v.description\}`);
-\});
+console.log(`Found ${results.violations.length} violations`);
+results.violations.forEach(v => {
+  console.log(`[${v.impact}] ${v.id}: ${v.description}`);
+});
 ```
 
 ## What I Found
@@ -40,7 +40,7 @@ The footer had social media links inside a `div` with `role="list"`, but the chi
 
 Project cards had overlay links with no accessible name. The link contained only an SVG icon (`ArrowUpRight`) — no text, no `aria-label`, no `title`.
 
-**Fix:** Added descriptive `aria-label` attributes: `"View \{project.title\} details"`.
+**Fix:** Added descriptive `aria-label` attributes: `"View {project.title} details"`.
 
 ### 3. Icon-Only Interactive Elements
 
@@ -66,11 +66,11 @@ I ran the audit on six routes:
 To prevent regressions, I added axe-core checks to the test suite:
 
 ```typescript
-it('has no accessibility violations', async () => \{
-  const \{ container \} = render(<Page />);
+it('has no accessibility violations', async () => {
+  const { container } = render(<Page />);
   const results = await axe(container);
   expect(results.violations).toHaveLength(0);
-\});
+});
 ```
 
 ## Key Takeaways

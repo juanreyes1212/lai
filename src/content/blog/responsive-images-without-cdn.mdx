@@ -16,17 +16,17 @@ Every Unsplash URL accepts `?w=` and `?h=` parameters. The server resizes on the
 
 ```tsx
 // src/components/ResponsiveImage.tsx
-const buildSrcSet = (src: string, widths: number[]) => \{
+const buildSrcSet = (src: string, widths: number[]) => {
   const url = new URL(src);
   if (!url.hostname.includes("unsplash.com")) return undefined;
   return widths
-    .map((w) => \{
+    .map((w) => {
       const u = new URL(src);
       u.searchParams.set("w", String(w));
-      return `$\{u.toString()\} $\{w\}w`;
-    \})
+      return `${u.toString()} ${w}w`;
+    })
     .join(", ");
-\};
+};
 ```
 
 The component falls back to a plain `<img>` for any non-Unsplash URL, so it's safe to drop in everywhere.

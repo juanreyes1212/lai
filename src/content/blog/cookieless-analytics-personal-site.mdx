@@ -19,7 +19,7 @@ Here's the entire integration.
 const domain = import.meta.env.VITE_ANALYTICS_DOMAIN;
 const enabled = Boolean(domain) && !isLocalhost;
 
-useEffect(() => \{
+useEffect(() => {
   if (!enabled || injected.current) return;
   const script = document.createElement("script");
   script.defer = true;
@@ -27,12 +27,12 @@ useEffect(() => \{
   script.src = "https://plausible.io/js/script.manual.js";
   document.head.appendChild(script);
   injected.current = true;
-\}, [enabled]);
+}, [enabled]);
 
-useEffect(() => \{
+useEffect(() => {
   if (!enabled) return;
-  window.plausible?.("pageview", \{ u: window.location.href \});
-\}, [enabled, location.pathname, location.search]);
+  window.plausible?.("pageview", { u: window.location.href });
+}, [enabled, location.pathname, location.search]);
 ```
 
 Mount it once inside the router (`AnimatedRoutes` is the natural home — it already calls `useLocation`) and you're done.
@@ -69,7 +69,7 @@ On a portfolio, three things are worth instrumenting beyond the default pageview
 
 1. **Resume PDF downloads** — `plausible("Resume Download")` on the link click.
 2. **Outbound clicks to GitHub/LinkedIn** — Plausible has an `outbound-links` extension, or fire a manual event.
-3. **404s** — fire a `plausible("404", \{ props: \{ path \} \})` from `NotFound` so you can spot dead inbound links.
+3. **404s** — fire a `plausible("404", { props: { path } })` from `NotFound` so you can spot dead inbound links.
 
 That's it. Don't track scroll depth, time on page, or button hovers. Those numbers feel useful, mean nothing on a 10-page site, and slowly turn a clean analytics setup into a dashboard you stop looking at.
 

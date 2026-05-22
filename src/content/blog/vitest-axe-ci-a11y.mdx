@@ -19,7 +19,7 @@ bun add -d vitest-axe axe-core
 Extend Vitest's `expect` in `src/test/setup.ts`:
 
 ```ts
-import \{ expect \} from "vitest";
+import { expect } from "vitest";
 import * as axeMatchers from "vitest-axe/matchers";
 expect.extend(axeMatchers);
 ```
@@ -27,10 +27,10 @@ expect.extend(axeMatchers);
 Then one test per route:
 
 ```tsx
-it("/blog has no axe violations", async () => \{
-  const \{ container \} = renderRoute("/blog", <Blog />);
+it("/blog has no axe violations", async () => {
+  const { container } = renderRoute("/blog", <Blog />);
   expect(await axe(container, axeOptions)).toHaveNoViolations();
-\});
+});
 ```
 
 That's it. Nine routes, ~2 seconds total, runs on every `vitest` invocation and in CI.
@@ -40,7 +40,7 @@ That's it. Nine routes, ~2 seconds total, runs on every `vitest` invocation and 
 `color-contrast` is the most useful axe rule and the most useless one in jsdom — without real layout, axe can't read computed colors against painted backgrounds. Disable it for the unit test layer and rely on Playwright or a manual pass for that one rule:
 
 ```ts
-const axeOptions = \{ rules: \{ "color-contrast": \{ enabled: false \} \} \};
+const axeOptions = { rules: { "color-contrast": { enabled: false } } };
 ```
 
 The rest of the ruleset (ARIA, landmarks, labels, headings, focusable controls, link names) all work fine.
@@ -50,12 +50,12 @@ The rest of the ruleset (ARIA, landmarks, labels, headings, focusable controls, 
 Components that use `whileInView` crash with `ReferenceError: IntersectionObserver is not defined`. Mock it in `setup.ts`:
 
 ```ts
-class MockIntersectionObserver \{
-  observe() \{\} unobserve() \{\} disconnect() \{\}
-  takeRecords() \{ return []; \}
+class MockIntersectionObserver {
+  observe() {} unobserve() {} disconnect() {}
+  takeRecords() { return []; }
   root = null; rootMargin = ""; thresholds = [];
-\}
-Object.defineProperty(window, "IntersectionObserver", \{ value: MockIntersectionObserver \});
+}
+Object.defineProperty(window, "IntersectionObserver", { value: MockIntersectionObserver });
 ```
 
 ## What axe catches

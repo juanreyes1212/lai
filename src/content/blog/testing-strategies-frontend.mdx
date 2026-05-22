@@ -54,12 +54,12 @@ Don't test:
 Mock at the network boundary:
 
 ```typescript
-import \{ rest \} from 'msw';
+import { rest } from 'msw';
 
 const handlers = [
-  rest.get('/api/users', (req, res, ctx) => \{
-    return res(ctx.json([\{ id: 1, name: 'John' \}]));
-  \}),
+  rest.get('/api/users', (req, res, ctx) => {
+    return res(ctx.json([{ id: 1, name: 'John' }]));
+  }),
 ];
 ```
 
@@ -74,14 +74,14 @@ Reserve E2E for critical paths:
 - Core feature happy paths
 
 ```javascript
-describe('Checkout', () => \{
-  it('completes purchase successfully', () => \{
+describe('Checkout', () => {
+  it('completes purchase successfully', () => {
     cy.login();
     cy.addToCart('product-1');
     cy.checkout();
     cy.contains('Order confirmed');
-  \});
-\});
+  });
+});
 ```
 
 ## Continuous Integration

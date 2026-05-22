@@ -17,8 +17,8 @@ A hand-edited `sitemap.xml` rots the moment you publish a new post. I generate m
 ```js
 const urls = [
   "/", "/work", "/personal", "/blog", "/resume",
-  ...workProjects.map((p) => `/work/$\{p.slug\}`),
-  ...blogPosts.map((p) => `/blog/$\{p.slug\}`),
+  ...workProjects.map((p) => `/work/${p.slug}`),
+  ...blogPosts.map((p) => `/blog/${p.slug}`),
 ];
 ```
 
@@ -39,17 +39,17 @@ One line in `robots.txt`. Skipping it is the most common SEO bug I see on portfo
 Both validate, but Google's Rich Results documentation centers on `Article`. `BlogPosting` is a subtype that adds nothing useful for a personal blog and quietly omits eligibility for some result types. I switched.
 
 ```json
-\{
+{
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": "...",
   "image": ["..."],
   "datePublished": "2026-05-11",
   "dateModified": "2026-05-11",
-  "author": \{ "@type": "Person", "name": "Juan Reyes" \},
-  "publisher": \{ "@type": "Person", "name": "Juan Reyes" \},
-  "mainEntityOfPage": \{ "@type": "WebPage", "@id": "..." \}
-\}
+  "author": { "@type": "Person", "name": "Juan Reyes" },
+  "publisher": { "@type": "Person", "name": "Juan Reyes" },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": "..." }
+}
 ```
 
 Three fields people skip and shouldn't:
