@@ -20,6 +20,7 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const AnimatedRoutes = () => {
   const location = useLocation();
+  useAnalytics();
 
   return (
     <AnimatePresence mode="wait">
