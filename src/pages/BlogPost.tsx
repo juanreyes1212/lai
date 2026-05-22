@@ -1,18 +1,23 @@
+import { Suspense, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Clock, Calendar, User } from "lucide-react";
 import { Link, useParams, Navigate } from "react-router-dom";
+import { MDXProvider } from "@mdx-js/react";
 import { Badge } from "@/components/ui/badge";
 import PageLayout from "@/components/portfolio/PageLayout";
 import BackLink from "@/components/portfolio/BackLink";
-import MarkdownRenderer from "@/components/MarkdownRenderer";
 import SEO from "@/components/SEO";
 import ResponsiveImage from "@/components/ResponsiveImage";
 import { blogPosts } from "@/data/portfolioData";
 import { getCategoryColor } from "@/lib/colors";
+import { loadMdxPost } from "@/content/blogLoader";
+import { mdxComponents } from "@/content/mdxComponents";
 
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
   const post = blogPosts.find((p) => p.slug === slug);
+  // Memoize so React.lazy keeps a stable identity across re-renders.
+  const MdxContent = useMemo(() => (slug ? loadMdxPost(slug) : null), [slug]);
 
   if (!post) {
     return <Navigate to="/blog" replace />;
@@ -125,7 +130,15 @@ const BlogPost = () => {
               {post.excerpt}
             </p>
             <div className="glass rounded-2xl p-8 mb-8">
-              <MarkdownRenderer content={post.content} />
+              {MdxContent ? (
+                <MDXProvider components={mdxComponents}>
+                  <Suspense fallback={<div className="h-32 animate-pulse bg-muted/20 rounded" aria-label="Loading article" />}>
+                    <MdxContent />
+                  </Suspense>
+                </MDXProvider>
+              ) : (
+                <p className="text-muted-foreground">Article content unavailable.</p>
+              )}
             </div>
           </motion.article>
 
