@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import PageTransition from "./PageTransition";
 import PageSkeleton from "./PageSkeleton";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 // Eagerly load the landing page so first paint isn't gated on a chunk fetch.
 import Index from "@/pages/Index";
