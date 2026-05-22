@@ -1,0 +1,74 @@
+---
+slug: "accessibility-frontend"
+title: "Making Accessibility a Priority in Frontend Development"
+category: "Accessibility"
+excerpt: "A comprehensive guide to building accessible web applications that work for everyone, including WCAG compliance strategies."
+date: "Aug 18, 2024"
+readTime: "9 min read"
+image: "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&h=400&fit=crop"
+tags: ["Accessibility","WCAG","UX"]
+---
+Accessibility isn't just a checkbox—it's about creating inclusive experiences that work for everyone. Here's how to build accessibility into your development process.
+
+## Understanding WCAG
+
+The Web Content Accessibility Guidelines (WCAG) are organized around four principles (POUR):
+
+- **Perceivable** - Information must be presentable to users
+- **Operable** - UI components must be operable
+- **Understandable** - Information and UI must be understandable
+- **Robust** - Content must be robust enough for assistive technologies
+
+Aim for WCAG 2.1 Level AA as your baseline.
+
+## Semantic HTML is the Foundation
+
+Before reaching for ARIA, use semantic HTML:
+
+```html
+<!-- ❌ Div soup -->
+<div class="button" onclick="submit()">Submit</div>
+
+<!-- ✅ Semantic -->
+<button type="submit">Submit</button>
+```
+
+Native elements provide keyboard support, focus management, and screen reader announcements for free.
+
+## Keyboard Navigation
+
+Every interactive element must be keyboard accessible:
+
+- Tab order should follow visual order
+- Focus states must be visible
+- Escape should close modals/dropdowns
+- Arrow keys for navigation within components
+
+Test by unplugging your mouse and navigating your entire application.
+
+## Color and Contrast
+
+- Maintain 4.5:1 contrast ratio for normal text
+- 3:1 for large text and UI components
+- Never use color alone to convey information
+- Test with color blindness simulators
+
+## Screen Reader Testing
+
+Regularly test with screen readers:
+
+- **VoiceOver** (Mac) - Built into macOS
+- **NVDA** (Windows) - Free and widely used
+- **JAWS** (Windows) - Enterprise standard
+
+Listen to how your content sounds, not just how it looks.
+
+## Automated Testing
+
+Integrate accessibility testing into your CI/CD:
+
+- **eslint-plugin-jsx-a11y** for static analysis
+- **axe-core** for runtime testing
+- **Lighthouse** for overall audits
+
+Automated tools catch about 30% of issues—manual testing is still essential.

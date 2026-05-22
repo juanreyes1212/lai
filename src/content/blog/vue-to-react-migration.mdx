@@ -1,0 +1,85 @@
+---
+slug: "vue-to-react-migration"
+title: "Migrating from Vue.js to React: A Practical Guide"
+category: "Migration"
+excerpt: "Step-by-step approach to migrating a large Vue.js application to React while maintaining business continuity."
+date: "Jul 22, 2024"
+readTime: "15 min read"
+image: "https://images.unsplash.com/photo-1555099962-4199c345e5dd?w=800&h=400&fit=crop"
+tags: ["Vue.js","React","Migration"]
+---
+Framework migrations can be daunting, but with the right strategy, you can migrate incrementally while maintaining business continuity. Here's the approach I used for a 100K+ line codebase.
+
+## Why Migrate?
+
+Before starting, ensure you have valid reasons:
+
+- Team expertise shifting toward React
+- Ecosystem requirements (specific libraries)
+- Hiring considerations
+- Performance requirements
+
+Don't migrate just because React is popular. Vue is excellent.
+
+## The Strangler Fig Pattern
+
+Instead of a big-bang rewrite, use the strangler fig pattern:
+
+1. Build new features in React
+2. Gradually replace Vue components
+3. Eventually remove all Vue code
+
+This approach reduces risk and delivers value continuously.
+
+## Setting Up the Hybrid Architecture
+
+Use module federation or a micro-frontend approach to run both frameworks:
+
+```javascript
+// Shell application loads either Vue or React
+const loadComponent = (framework, path) => \{
+  if (framework === 'vue') \{
+    return loadVueComponent(path);
+  \}
+  return loadReactComponent(path);
+\};
+```
+
+## Component Migration Strategy
+
+Migrate bottom-up, starting with leaf components:
+
+1. **Utilities and hooks** - Pure functions translate directly
+2. **Presentational components** - Stateless components are straightforward
+3. **Container components** - State management requires more thought
+4. **Page components** - Migrate last, as they orchestrate everything
+
+## State Management Translation
+
+| Vue Concept | React Equivalent |
+|-------------|------------------|
+| data() | useState |
+| computed | useMemo |
+| watch | useEffect |
+| methods | Regular functions |
+| Vuex | Redux/Zustand |
+
+## Testing During Migration
+
+Maintain test coverage throughout:
+
+- Keep existing Vue tests running
+- Write new tests for React components
+- Integration tests ensure feature parity
+- E2E tests validate user journeys
+
+## Timeline Expectations
+
+For a 100K+ line codebase with a team of 5:
+
+- Setup and tooling: 2-4 weeks
+- First features in React: 4-6 weeks
+- 50% migration: 6-12 months
+- Complete migration: 12-18 months
+
+Plan for the long haul and celebrate incremental wins.

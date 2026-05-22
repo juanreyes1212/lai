@@ -1,0 +1,66 @@
+---
+slug: "six-month-enterprise-contract"
+title: "Lessons from a 6-Month Enterprise Contract"
+category: "Leadership"
+excerpt: "What I learned leading a frontend rebuild for a fintech client under NDA — navigating enterprise processes, earning trust, and shipping under pressure."
+date: "Apr 10, 2024"
+readTime: "10 min read"
+image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=400&fit=crop"
+tags: ["Contract Work","Leadership","Enterprise"]
+---
+Contract work teaches you things full-time employment never will. Last year I spent six months embedded with a fintech company, leading their frontend rebuild. I can't share specifics due to NDA, but the lessons are universal.
+
+## Earning Trust as an Outsider
+
+Walking into an established team as a contractor puts you in an awkward position. You're expected to lead, but you haven't earned trust yet. My approach:
+
+1. **Listen first** — Spend the first two weeks understanding the codebase, the team dynamics, and the unspoken rules
+2. **Quick wins** — Fix a painful bug or improve a slow build pipeline in week one
+3. **Document everything** — Contractors who leave documentation earn permanent goodwill
+4. **Respect existing decisions** — Don't immediately critique the architecture. Understand *why* before suggesting changes.
+
+## Navigating Enterprise Processes
+
+Enterprise development moves differently than startup development:
+
+- **Change management** — Even CSS changes go through review boards
+- **Security reviews** — Every dependency needs approval
+- **Compliance requirements** — Financial data has strict handling rules
+- **Multiple stakeholders** — Product, design, compliance, security all have sign-off authority
+
+I learned to build these cycles into my estimates instead of fighting them.
+
+## The Technical Challenge
+
+The client needed to modernize a legacy frontend while maintaining feature parity with the existing system. The constraints:
+
+- Zero downtime during migration
+- Regulatory compliance for all financial displays
+- Support for IE11 (yes, in fintech, legacy browser support is real)
+- Pixel-perfect design implementation from a 200-page Figma file
+
+## Leading Without Authority
+
+As a contractor, you don't have organizational authority. You lead through:
+
+- **Competence** — Your code and decisions speak for you
+- **Communication** — Over-communicate timelines, risks, and trade-offs
+- **Mentorship** — Help the team grow; they'll advocate for your approach
+- **Results** — Nothing builds trust like shipping on time
+
+## What I'd Do Differently
+
+- **Negotiate scope earlier** — Feature creep is worse in enterprise because the feedback loop is longer
+- **Establish async communication norms** — Meetings consume contractor hours fast
+- **Build CI/CD first** — The deployment pipeline was the biggest bottleneck and I should have tackled it in week one
+
+## The Handoff
+
+The most important phase of contract work is the handoff. I spent the final two weeks:
+
+- Writing comprehensive documentation
+- Recording architectural decision videos
+- Pair programming with the team on complex areas
+- Creating a maintenance runbook
+
+A clean handoff is the difference between being called back and being forgotten.

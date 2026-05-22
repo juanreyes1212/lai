@@ -1,0 +1,70 @@
+---
+slug: "spa-seo-checklist"
+title: "A Pragmatic SEO Checklist for a React SPA"
+category: "SEO"
+excerpt: "Sitemaps, robots.txt, and Article JSON-LD — the un-glamorous SEO work that single-page apps still have to do, and the small details Google cares about."
+date: "May 11, 2026"
+readTime: "4 min read"
+image: "https://images.unsplash.com/photo-1432888622747-4eb9a8efeb07?w=800&h=400&fit=crop"
+tags: ["SEO","JSON-LD","Sitemaps"]
+---
+Single-page apps don't get SEO for free. Even with modern crawlers executing JavaScript, the cheap wins still come from the same boring artifacts every static site has shipped for fifteen years: a sitemap, a robots file, and structured data that's actually structured.
+
+## 1. Generate the sitemap from your data, not by hand
+
+A hand-edited `sitemap.xml` rots the moment you publish a new post. I generate mine from the same `portfolioData` the app already uses:
+
+```js
+const urls = [
+  "/", "/work", "/personal", "/blog", "/resume",
+  ...workProjects.map((p) => `/work/$\{p.slug\}`),
+  ...blogPosts.map((p) => `/blog/$\{p.slug\}`),
+];
+```
+
+One source of truth, zero drift. The output lives at `/public/sitemap.xml` and ships with the build.
+
+## 2. Tell robots where it is
+
+Easy to forget: `sitemap.xml` is discoverable but Google prefers an explicit pointer.
+
+```
+Sitemap: https://juanreyes.dev/sitemap.xml
+```
+
+One line in `robots.txt`. Skipping it is the most common SEO bug I see on portfolio sites.
+
+## 3. Article vs BlogPosting — pick Article
+
+Both validate, but Google's Rich Results documentation centers on `Article`. `BlogPosting` is a subtype that adds nothing useful for a personal blog and quietly omits eligibility for some result types. I switched.
+
+```json
+\{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "...",
+  "image": ["..."],
+  "datePublished": "2026-05-11",
+  "dateModified": "2026-05-11",
+  "author": \{ "@type": "Person", "name": "Juan Reyes" \},
+  "publisher": \{ "@type": "Person", "name": "Juan Reyes" \},
+  "mainEntityOfPage": \{ "@type": "WebPage", "@id": "..." \}
+\}
+```
+
+Three fields people skip and shouldn't:
+
+- **`mainEntityOfPage`** — disambiguates which URL is canonical for this Article.
+- **`image` as an array** — required by Google even when there's only one.
+- **`dateModified`** — equal to `datePublished` is fine; missing is not.
+
+## 4. Validate before you ship
+
+Two free tools, both faster than redeploying:
+
+1. [Rich Results Test](https://search.google.com/test/rich-results) — pastes a URL or HTML, tells you exactly which fields Google parsed.
+2. [Schema Markup Validator](https://validator.schema.org/) — strict spec compliance, catches things Google ignores but other crawlers don't.
+
+## What this *isn't*
+
+This won't fix a slow site, thin content, or a misconfigured canonical. SEO has a hundred other levers. But sitemap + robots + structured data is the floor, and the floor takes an afternoon.

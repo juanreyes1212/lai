@@ -1,0 +1,74 @@
+---
+slug: "yagni-codebase-pruning"
+title: "YAGNI in Practice: Auditing and Pruning a Real Codebase"
+category: "Architecture"
+excerpt: "I deleted 41 unused components and removed 35 npm dependencies from a production codebase. Here's the process, the tools, and why less code is always better."
+date: "Feb 20, 2025"
+readTime: "7 min read"
+image: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=800&h=400&fit=crop"
+tags: ["Architecture","Code Quality","YAGNI"]
+---
+YAGNI — "You Aren't Gonna Need It" — is one of those principles every developer agrees with in theory but rarely practices. I recently put it into action on a real project, and the results were dramatic.
+
+## The Problem
+
+The project had accumulated 47 UI components in `src/components/ui/`. Only 6 were actually imported anywhere. The rest were scaffolded by a component generator and never used. The `package.json` had 50+ dependencies, many tied to those unused components.
+
+Dead code isn't free. It:
+
+- Increases bundle size (even with tree-shaking, some side effects slip through)
+- Slows down IDE indexing and TypeScript compilation
+- Creates confusion about what's "real" vs. scaffolded
+- Adds maintenance burden during dependency updates
+
+## The Audit Process
+
+### Step 1: Identify What's Actually Used
+
+I traced imports from the entry point (`main.tsx`) through every page and component:
+
+```bash
+# Quick grep for imports from the ui directory
+grep -r "from.*components/ui" src/ --include="*.tsx" --include="*.ts" | sort -u
+```
+
+This revealed that only **badge**, **button**, **input**, **toast**, **toaster**, **sonner**, and **tooltip** were imported.
+
+### Step 2: Map Dependencies to Components
+
+Each unused component had associated npm packages:
+
+| Component | Dependencies |
+|-----------|-------------|
+| accordion | @radix-ui/react-accordion |
+| calendar | react-day-picker, date-fns |
+| carousel | embla-carousel-react |
+| chart | recharts |
+| form | react-hook-form, @hookform/resolvers, zod |
+| drawer | vaul |
+| command | cmdk |
+
+### Step 3: Delete with Confidence
+
+With the import analysis complete, I deleted 41 component files and removed 35 npm dependencies in a single pass. The key was doing it atomically — all deletions in one commit — so reverting would be trivial if something broke.
+
+## The Results
+
+| Metric | Before | After |
+|--------|--------|-------|
+| UI components | 47 | 6 |
+| npm dependencies | 50+ | ~15 |
+| `node_modules` size | ~180MB | ~95MB |
+| TypeScript check time | ~8s | ~4s |
+
+## When to Prune
+
+Make YAGNI audits a regular practice:
+
+1. **After major milestones** — scope tends to bloat during rapid development
+2. **Before onboarding new team members** — fewer files = faster ramp-up
+3. **During dependency update cycles** — why update what you don't use?
+
+## The Principle
+
+Every line of code is a liability. The best code is no code. YAGNI isn't about being lazy — it's about being intentional. Keep what serves the product, remove everything else.

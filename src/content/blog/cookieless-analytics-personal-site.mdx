@@ -1,0 +1,84 @@
+---
+slug: "cookieless-analytics-personal-site"
+title: "Cookie-less Analytics for a Personal Site"
+category: "Engineering"
+excerpt: "Plausible + a 40-line React hook gives you SPA pageview tracking, zero cookies, no consent banner, and a build that still passes Lighthouse — without leaking your site to localhost."
+date: "May 22, 2026"
+readTime: "5 min read"
+image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=400&fit=crop"
+tags: ["Analytics","Privacy","Plausible"]
+---
+Google Analytics on a personal site is overkill, ugly, and forces a cookie banner you don't want. Plausible (or any cookie-less alternative — Fathom, Umami, Simple Analytics) gives you the three numbers that actually matter — pageviews, top pages, referrers — without any of that baggage.
+
+Here's the entire integration.
+
+## The hook
+
+```ts
+// src/hooks/useAnalytics.ts
+const domain = import.meta.env.VITE_ANALYTICS_DOMAIN;
+const enabled = Boolean(domain) && !isLocalhost;
+
+useEffect(() => \{
+  if (!enabled || injected.current) return;
+  const script = document.createElement("script");
+  script.defer = true;
+  script.setAttribute("data-domain", domain);
+  script.src = "https://plausible.io/js/script.manual.js";
+  document.head.appendChild(script);
+  injected.current = true;
+\}, [enabled]);
+
+useEffect(() => \{
+  if (!enabled) return;
+  window.plausible?.("pageview", \{ u: window.location.href \});
+\}, [enabled, location.pathname, location.search]);
+```
+
+Mount it once inside the router (`AnimatedRoutes` is the natural home — it already calls `useLocation`) and you're done.
+
+## Why the env-var gate matters
+
+The hook is a no-op unless `VITE_ANALYTICS_DOMAIN` is set in the build. That means:
+
+- Local dev never pollutes the dashboard.
+- Preview deploys without the var stay clean.
+- Production gets a single env var added and starts reporting on next deploy.
+
+No conditional imports, no separate entry points, no `if (process.env.NODE_ENV === "production")` scattered across the codebase.
+
+## Why the manual script
+
+`script.js` auto-fires a pageview on load — useful for MPAs, broken for SPAs. After the first paint, React Router swaps the route without a navigation event, so Plausible has no idea anything happened.
+
+`script.manual.js` does nothing automatically. You call `window.plausible("pageview")` on every `location` change in a `useEffect`, and the SPA case just works. The tiny queue shim in the hook handles the race where a route change fires before the deferred script has finished loading.
+
+## GDPR posture without a banner
+
+The legal threshold for needing a consent banner in the EU is **storage of or access to information on the user's device** (cookies, localStorage, fingerprinting) OR processing of personal data. Plausible:
+
+- Sets no cookies.
+- Stores nothing client-side.
+- Hashes IP + user-agent + daily salt to derive a session ID, then throws the IP away.
+
+No personal data, no device storage, no banner required under ePrivacy or GDPR. Same applies to Fathom and Umami if you self-host.
+
+## What to actually track
+
+On a portfolio, three things are worth instrumenting beyond the default pageview:
+
+1. **Resume PDF downloads** — `plausible("Resume Download")` on the link click.
+2. **Outbound clicks to GitHub/LinkedIn** — Plausible has an `outbound-links` extension, or fire a manual event.
+3. **404s** — fire a `plausible("404", \{ props: \{ path \} \})` from `NotFound` so you can spot dead inbound links.
+
+That's it. Don't track scroll depth, time on page, or button hovers. Those numbers feel useful, mean nothing on a 10-page site, and slowly turn a clean analytics setup into a dashboard you stop looking at.
+
+## What this does NOT replace
+
+Plausible tells you **what is happening**, not **why**. For "why", the answers are still:
+
+- Lighthouse / WebPageTest for performance.
+- Real-user CrUX data for actual Core Web Vitals.
+- A 10-minute session with a friend and `prefers-reduced-motion: reduce` enabled for UX issues.
+
+Analytics is the smallest, cheapest piece of the observability puzzle. Keep it that way.
