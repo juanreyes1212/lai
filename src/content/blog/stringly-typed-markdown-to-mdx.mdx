@@ -1,0 +1,128 @@
+---
+slug: "stringly-typed-markdown-to-mdx"
+title: "From Stringly-Typed Markdown to MDX Without Breaking the Build"
+category: "Engineering"
+excerpt: "23 blog posts lived inside a 1,951-line TypeScript file as multi-line template literals. Here is how I extracted them to MDX, kept a slim metadata index, and lazy-loaded each post — without touching the rendering layer."
+date: "May 22, 2026"
+readTime: "6 min read"
+image: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=800&h=400&fit=crop"
+tags: ["MDX", "Vite", "Content"]
+---
+
+For a year my blog posts lived as template literals in `portfolioData.ts`. The file grew to 1,951 lines and 82 KB. Every typo in a backtick required a full reparse of the whole module. Bundle output? All 23 posts loaded on `/blog/anything`, because the bundler had no way to split them.
+
+This is the migration to MDX, done in about an hour with zero rendered-output regressions.
+
+## The split: metadata vs. content
+
+The mental model that unlocked the migration: blog posts are two different shapes glued together.
+
+- **Metadata** — slug, title, date, tags, hero image. Needed everywhere (listing page, related posts, sitemap). Small.
+- **Content** — the article body. Needed only on `/blog/:slug`. Large.
+
+Keep metadata in TypeScript (typed, easily filtered). Move content to per-slug `.mdx` files (markdown-native authoring, lazy-loadable).
+
+\`\`\`text
+src/
+  data/portfolioData.ts   ← slim metadata index (19 KB, down from 82 KB)
+  content/
+    blog/
+      <slug>.mdx          ← 23 files, one per post
+    blogLoader.ts         ← slug -> React.lazy(MDX)
+    mdxComponents.tsx     ← styling for h1, p, code, etc.
+\`\`\`
+
+## The Vite plugin
+
+\`\`\`ts
+// vite.config.ts
+import mdx from "@mdx-js/rollup";
+import remarkGfm from "remark-gfm";
+
+export default defineConfig({
+  plugins: [
+    { enforce: "pre", ...mdx({
+      remarkPlugins: [remarkGfm],
+      providerImportSource: "@mdx-js/react",
+    })},
+    react(),
+  ],
+});
+\`\`\`
+
+Two flags matter:
+
+- **`enforce: "pre"`** — MDX must run before `@vitejs/plugin-react-swc` sees the file, otherwise SWC tries to parse `.mdx` as TypeScript and gives up.
+- **`providerImportSource: "@mdx-js/react"`** — lets a single `<MDXProvider>` wrap all posts with a shared component map (styled `<h2>`, syntax-highlighted code, etc.).
+
+## The dynamic import map
+
+\`\`\`ts
+// src/content/blogLoader.ts
+const modules = import.meta.glob<{ default: ComponentType }>("./blog/*.mdx");
+
+export const loadMdxPost = (slug: string) => {
+  const entry = Object.entries(modules)
+    .find(([path]) => path.endsWith(\`/\${slug}.mdx\`));
+  return entry ? lazy(entry[1]) : null;
+};
+\`\`\`
+
+\`import.meta.glob\` without \`eager: true\` returns a map of dynamic-import factories. Vite turns each one into its own chunk, so visiting \`/blog/a\` ships only \`a.mdx\`'s bytes, never \`b.mdx\`'s.
+
+## The render swap
+
+The article body in \`BlogPost.tsx\` went from this:
+
+\`\`\`tsx
+<MarkdownRenderer content={post.content} />
+\`\`\`
+
+To this:
+
+\`\`\`tsx
+<MDXProvider components={mdxComponents}>
+  <Suspense fallback={<Skeleton />}>
+    <MdxContent />
+  </Suspense>
+</MDXProvider>
+\`\`\`
+
+The \`mdxComponents\` map is the same styling that \`MarkdownRenderer\` had hard-coded for ReactMarkdown — same Tailwind classes, same syntax highlighter — just keyed off MDX's component slots instead of ReactMarkdown's. Rendered output is byte-identical.
+
+## The migration safety net
+
+Migrating 23 posts by hand would have meant 23 chances to drop a backtick. Instead, a 20-line Bun script did it:
+
+\`\`\`ts
+import { blogPosts } from "./src/data/portfolioData";
+for (const post of blogPosts) {
+  const fm = [
+    "---",
+    \`slug: \${JSON.stringify(post.slug)}\`,
+    \`title: \${JSON.stringify(post.title)}\`,
+    // ...rest of metadata
+    "---",
+    "",
+  ].join("\\n");
+  writeFileSync(\`src/content/blog/\${post.slug}.mdx\`, fm + post.content);
+}
+\`\`\`
+
+\`JSON.stringify\` handles every edge case YAML cares about — quotes, colons, special chars — for free.
+
+A second script slimmed \`portfolioData.ts\`: parse the file, find the \`blogPosts\` array literal, replace it with a regenerated version that drops the \`content\` field. The diff was 1,951 → 480 lines.
+
+## What broke (briefly)
+
+Two things, both caught on first \`tsc --noEmit\`:
+
+1. **The fallback path** — I initially returned `null` from `loadMdxPost` for missing slugs, but `BlogPost` then unconditionally rendered `<MdxContent />`. A conditional render and a "content unavailable" fallback fixed it. (No slug should ever miss in production — the metadata index is the source of truth — but failing closed beats a white screen.)
+2. **`post.content` references** — TS caught every stale read instantly because the type narrowed when I deleted the field.
+
+## What I would do differently
+
+- **Frontmatter validation.** Right now nothing checks that the YAML in each MDX file matches the metadata in `portfolioData.ts`. A 30-line vitest test that imports each MDX module and compares frontmatter to the index would catch drift forever.
+- **Skip the separate index.** The metadata is technically duplicated (it lives in both the MDX frontmatter and `portfolioData.ts`). A build-time generator could synthesize the index from the MDX files. Worth doing once you have 50+ posts. At 23, the duplication is fine and the explicit ordering in the index file is actually useful.
+
+The win that justifies the effort isn't bundle size (each post is tiny). It's that authoring is finally pleasant: no escape rules, no template literals, no risk of breaking the homepage with a typo deep in a blog post.
