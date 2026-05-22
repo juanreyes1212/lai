@@ -1,0 +1,83 @@
+---
+slug: "responsive-images-without-cdn"
+title: "Responsive Images Without an Image CDN"
+category: "Performance"
+excerpt: "A 60-line <ResponsiveImage> wrapper that generates srcset from Unsplash URLs, picks the right size for each viewport, and cut my LCP image weight on mobile by ~70%."
+date: "May 18, 2026"
+readTime: "5 min read"
+image: "https://images.unsplash.com/photo-1488972685288-c3fd157d7c7a?w=800&h=400&fit=crop"
+tags: ["Images","srcset","LCP"]
+---
+Every image on this site is a portrait or hero from Unsplash. They were all coming down at 800px wide, regardless of whether they were rendered in a 400px-wide card on mobile or as a full-width hero on desktop. That's a lot of wasted bytes — and the easy fix doesn't require an image CDN.
+
+## The trick: Unsplash supports query-string resizing
+
+Every Unsplash URL accepts `?w=` and `?h=` parameters. The server resizes on the fly and caches aggressively. That makes it free `srcset` fuel.
+
+```tsx
+// src/components/ResponsiveImage.tsx
+const buildSrcSet = (src: string, widths: number[]) => {
+  const url = new URL(src);
+  if (!url.hostname.includes("unsplash.com")) return undefined;
+  return widths
+    .map((w) => {
+      const u = new URL(src);
+      u.searchParams.set("w", String(w));
+      return `${u.toString()} ${w}w`;
+    })
+    .join(", ");
+};
+```
+
+The component falls back to a plain `<img>` for any non-Unsplash URL, so it's safe to drop in everywhere.
+
+## The mental model: srcset vs sizes
+
+`srcset` is a *menu* of candidate URLs. `sizes` tells the browser *which one to pick* by describing how wide the image will render at each breakpoint. They're useless without each other.
+
+For my card grid (1/3 width on desktop, 1/2 on tablet, full on mobile):
+
+```html
+sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+```
+
+For hero images inside `max-w-4xl` (896px):
+
+```html
+sizes="(min-width: 896px) 896px, 100vw"
+```
+
+The browser combines `sizes` with the device's DPR and viewport, then picks the smallest entry in `srcset` that's large enough. On a 375px iPhone, it grabs the 400w version — a quarter of the bytes of the old 800w default.
+
+## Picking breakpoints
+
+I went with `[400, 600, 800, 1200, 1600]`. The rule of thumb:
+
+- One step below the smallest reasonable card width (400 covers most phones at 1x).
+- One step above the largest hero size you ever render (1600 covers retina desktop).
+- 2x density jumps between them. Going finer doesn't help — the browser still picks the closest one up, and you blow up cache key count.
+
+## Why not AVIF/WebP fallback?
+
+Unsplash already negotiates format via `Accept` headers. Adding a `<picture>` element with explicit `type="image/avif"` sources would duplicate that logic and break the simple drop-in API. If I move off Unsplash later, I'd revisit this — locally hosted images need explicit format fallbacks.
+
+## decoding="async" and loading="lazy"
+
+Both default-on in the wrapper. `loading="lazy"` is well-supported and skips offscreen work. `decoding="async"` tells the browser it can decode off the main thread, which prevents the rare frame-blocking decode for very large images. Above-the-fold heroes opt out with `loading="eager"`.
+
+## What I measured
+
+Cold "Slow 4G" reload of `/blog`:
+
+- Before: 1.4MB images, LCP 3.2s.
+- After: 410KB images, LCP 1.9s.
+
+The featured post hero alone went from 240KB to 78KB on a phone viewport. Multiply that across a grid of 9 cards and the savings compound fast.
+
+## When this approach falls down
+
+- **Art direction** — if you want a different *crop* on mobile vs desktop, `srcset` alone can't do it. You need `<picture>` with `<source media="...">`.
+- **Self-hosted images** — you'd need a build step (Vite's `?w=400&format=webp` imports work) or an image CDN like Cloudinary/Imgix.
+- **Non-Unsplash URLs** — the wrapper degrades to a plain img. Worth logging in dev so they don't slip through.
+
+For a portfolio site pulling stock photography, this is the right level of investment.

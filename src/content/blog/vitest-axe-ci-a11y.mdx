@@ -1,0 +1,82 @@
+---
+slug: "vitest-axe-ci-a11y"
+title: "Catching A11y Regressions in CI with vitest-axe"
+category: "Accessibility"
+excerpt: "A 90-line smoke test that runs axe-core against every route on every commit — what it catches, what it can't, and the two jsdom gotchas to know about up front."
+date: "May 20, 2026"
+readTime: "4 min read"
+image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=400&fit=crop"
+tags: ["a11y","Testing","Vitest"]
+---
+Manual accessibility audits are great. Doing them on every PR is not realistic. vitest-axe closes the gap: a per-route smoke test that runs axe-core against the rendered DOM and fails the build on violations.
+
+## The setup
+
+```bash
+bun add -d vitest-axe axe-core
+```
+
+Extend Vitest's `expect` in `src/test/setup.ts`:
+
+```ts
+import { expect } from "vitest";
+import * as axeMatchers from "vitest-axe/matchers";
+expect.extend(axeMatchers);
+```
+
+Then one test per route:
+
+```tsx
+it("/blog has no axe violations", async () => {
+  const { container } = renderRoute("/blog", <Blog />);
+  expect(await axe(container, axeOptions)).toHaveNoViolations();
+});
+```
+
+That's it. Nine routes, ~2 seconds total, runs on every `vitest` invocation and in CI.
+
+## Gotcha 1: jsdom has no layout engine
+
+`color-contrast` is the most useful axe rule and the most useless one in jsdom — without real layout, axe can't read computed colors against painted backgrounds. Disable it for the unit test layer and rely on Playwright or a manual pass for that one rule:
+
+```ts
+const axeOptions = { rules: { "color-contrast": { enabled: false } } };
+```
+
+The rest of the ruleset (ARIA, landmarks, labels, headings, focusable controls, link names) all work fine.
+
+## Gotcha 2: framer-motion needs IntersectionObserver
+
+Components that use `whileInView` crash with `ReferenceError: IntersectionObserver is not defined`. Mock it in `setup.ts`:
+
+```ts
+class MockIntersectionObserver {
+  observe() {} unobserve() {} disconnect() {}
+  takeRecords() { return []; }
+  root = null; rootMargin = ""; thresholds = [];
+}
+Object.defineProperty(window, "IntersectionObserver", { value: MockIntersectionObserver });
+```
+
+## What axe catches
+
+In a single run on this portfolio, axe caught:
+- Missing `aria-label` on icon-only buttons
+- Heading order skips (h2 → h4)
+- Links with no discernible name
+- Form inputs missing labels
+
+What it didn't catch (and won't):
+- Whether the skip link actually skips to meaningful content
+- Whether focus order makes sense
+- Whether the live region announces the right thing at the right time
+
+## Ignoring rules responsibly
+
+If a rule fires on something you've intentionally accepted (e.g. a decorative SVG with no role), disable that rule *scoped to the assertion*, not globally. Globals rot — they keep masking real regressions long after the original justification is gone.
+
+## The per-route smoke pattern
+
+Render each page inside a `MemoryRouter` + `HelmetProvider` with the appropriate `:slug` from the data fixtures. One test per route, identical shape, easy to copy when adding a new page. The whole file is 90 lines.
+
+Worth the investment.

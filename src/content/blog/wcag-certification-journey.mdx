@@ -1,0 +1,84 @@
+---
+slug: "wcag-certification-journey"
+title: "Earning My WCAG 2.1 Certification: What I Learned"
+category: "Accessibility"
+excerpt: "My journey to becoming IAAP WAS certified — the study process, the exam experience, and how it fundamentally changed how I write code."
+date: "Nov 12, 2023"
+readTime: "11 min read"
+image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&h=400&fit=crop"
+tags: ["Accessibility","WCAG","Certification"]
+---
+I've cared about accessibility for years, but studying for the IAAP Web Accessibility Specialist (WAS) certification showed me how much I didn't know. Here's the full story.
+
+## Why Get Certified?
+
+I'd been building "accessible" websites for years, but my knowledge was patchy:
+
+- I knew about alt text and color contrast
+- I understood semantic HTML basics
+- I could fix issues flagged by automated tools
+
+But I couldn't confidently answer: *"Does this component meet WCAG 2.1 Level AA?"* The certification forced me to fill those gaps systematically.
+
+## The Study Plan
+
+I spent three months preparing, roughly 5-7 hours per week:
+
+### Month 1: WCAG Deep Dive
+- Read every WCAG 2.1 success criterion (all 78 of them)
+- Studied the "Understanding" documents for each criterion
+- Practiced identifying which criteria apply to specific components
+
+### Month 2: Assistive Technology
+- Used VoiceOver daily for all web browsing
+- Tested with NVDA on a Windows VM
+- Learned JAWS keyboard shortcuts
+- Understood how screen readers parse ARIA roles and states
+
+### Month 3: Practice and Review
+- Audited five real websites using the WCAG-EM methodology
+- Took practice exams from Deque University
+- Reviewed every criterion I'd gotten wrong
+
+## Surprising Things I Learned
+
+### 1. ARIA is a Last Resort
+The first rule of ARIA is *don't use ARIA*. Native HTML elements provide built-in accessibility that ARIA can only approximate. I was over-using ARIA roles on elements that already had semantic meaning.
+
+### 2. Focus Management is Hard
+Modal dialogs, dropdown menus, and single-page app route changes all require careful focus management. The focus should move predictably, and users should always know where they are.
+
+### 3. Cognitive Accessibility Matters
+WCAG 2.1 added criteria for cognitive and learning disabilities:
+- **Identify Input Purpose** (1.3.5) — autocomplete attributes help password managers and assistive tech
+- **Reflow** (1.4.10) — content should work at 400% zoom
+- **Text Spacing** (1.4.12) — users may override your CSS for readability
+
+### 4. Mobile Accessibility is Different
+Touch targets need to be at least 44x44 CSS pixels. Gesture-based interactions need alternatives. Screen reader behavior differs significantly between iOS and Android.
+
+## The Exam
+
+The WAS exam is 75 multiple-choice questions in 2 hours:
+
+- ~40% WCAG knowledge (criteria, conformance levels, principles)
+- ~30% testing methodology (tools, techniques, reporting)
+- ~30% implementation (HTML, ARIA, CSS techniques)
+
+The hardest questions weren't about knowing the rules — they were about applying judgment to ambiguous scenarios.
+
+## How It Changed My Code
+
+Since earning the certification, I:
+
+- **Start with semantic HTML** and only add ARIA when native elements fall short
+- **Test with keyboard first** before even looking at the visual design
+- **Include accessibility criteria** in every user story's definition of done
+- **Run axe-core in CI** to catch regressions automatically
+- **Advocate for accessibility** in design reviews, not just code reviews
+
+## Is It Worth It?
+
+Absolutely. The certification didn't teach me accessibility — it taught me to *think* about accessibility. Every component I build now, I instinctively consider: how does this work without a mouse? Without sight? Without perfect cognition?
+
+That mental model is worth more than the credential itself.

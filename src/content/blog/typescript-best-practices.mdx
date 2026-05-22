@@ -1,0 +1,82 @@
+---
+slug: "typescript-best-practices"
+title: "TypeScript Best Practices for Large Codebases"
+category: "TypeScript"
+excerpt: "Practical TypeScript patterns and practices that improve code quality, maintainability, and developer productivity."
+date: "Sep 5, 2024"
+readTime: "10 min read"
+image: "https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&h=400&fit=crop"
+tags: ["TypeScript","Best Practices"]
+---
+TypeScript has become essential for large-scale JavaScript applications. Here are practices that have proven valuable across codebases of all sizes.
+
+## Strict Mode from Day One
+
+Enable strict mode in tsconfig.json immediately:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
+  }
+}
+```
+
+It's much harder to add strictness to an existing codebase than to start with it.
+
+## Type Inference is Your Friend
+
+Let TypeScript infer types when obvious:
+
+```typescript
+// ❌ Verbose
+const items: string[] = ['a', 'b', 'c'];
+
+// ✅ Inferred
+const items = ['a', 'b', 'c'];
+```
+
+Explicit types when documenting APIs, inference for implementation details.
+
+## Discriminated Unions for State
+
+Model complex state with discriminated unions:
+
+```typescript
+type AsyncState<T> =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; data: T }
+  | { status: 'error'; error: Error };
+```
+
+TypeScript will narrow the type based on the status field.
+
+## Utility Types Are Powerful
+
+Master built-in utility types:
+
+- `Partial<T>` - Make all properties optional
+- `Required<T>` - Make all properties required
+- `Pick<T, K>` - Select specific properties
+- `Omit<T, K>` - Exclude specific properties
+- `Record<K, V>` - Create object types
+
+## Avoid 'any' Like the Plague
+
+Every 'any' is a hole in your type safety. When you need flexibility:
+
+- Use `unknown` for truly unknown types
+- Use generics for reusable patterns
+- Use type guards to narrow types safely
+
+## Organize Types Thoughtfully
+
+For large codebases:
+
+- Co-locate types with their implementations
+- Export shared types from dedicated modules
+- Use barrel files sparingly (they can hurt tree-shaking)
+- Consider a `types/` directory for cross-cutting concerns

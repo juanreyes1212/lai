@@ -1,0 +1,83 @@
+---
+slug: "axe-core-accessibility-audit"
+title: "Running a Full Accessibility Audit with axe-core"
+category: "Accessibility"
+excerpt: "How I programmatically audited every page of a React app for WCAG violations using axe-core, and the surprising issues I found hiding in plain sight."
+date: "Jan 25, 2025"
+readTime: "8 min read"
+image: "https://images.unsplash.com/photo-1573164713988-8665fc963095?w=800&h=400&fit=crop"
+tags: ["Accessibility","axe-core","WCAG"]
+---
+Manual accessibility testing is essential, but it doesn't scale. For a recent project, I ran a programmatic audit using axe-core across every route — and found violations I never would have caught by eye.
+
+## Setting Up Programmatic Auditing
+
+axe-core can run in any JavaScript environment. I wrote a script that:
+
+1. Renders each page in jsdom
+2. Runs axe-core's `run()` function
+3. Reports violations with severity and remediation guidance
+
+```typescript
+import axe from 'axe-core';
+
+const results = await axe.run(document.body);
+console.log(`Found ${results.violations.length} violations`);
+results.violations.forEach(v => {
+  console.log(`[${v.impact}] ${v.id}: ${v.description}`);
+});
+```
+
+## What I Found
+
+### 1. `aria-required-children` Violation (Critical)
+
+The footer had social media links inside a `div` with `role="list"`, but the children weren't wrapped in `li` elements. Screen readers expected list items and got divs.
+
+**Fix:** Replaced the `div[role="list"]` with a semantic `<ul>` and wrapped each link in an `<li>`.
+
+### 2. `link-name` Violations (Serious)
+
+Project cards had overlay links with no accessible name. The link contained only an SVG icon (`ArrowUpRight`) — no text, no `aria-label`, no `title`.
+
+**Fix:** Added descriptive `aria-label` attributes: `"View {project.title} details"`.
+
+### 3. Icon-Only Interactive Elements
+
+Several buttons and links used only icons without accessible labels. sighted users understood the visual affordance, but screen reader users heard "link" with no context.
+
+**Fix:** Added `aria-hidden="true"` to decorative icons and `aria-label` to their parent interactive elements.
+
+## The Audit Across All Pages
+
+I ran the audit on six routes:
+
+| Page | Violations Before | Violations After |
+|------|-------------------|------------------|
+| Home | 3 | 0 |
+| Work | 1 | 0 |
+| Personal | 1 | 0 |
+| Blog | 0 | 0 |
+| Resume | 0 | 0 |
+| 404 | 0 | 0 |
+
+## Integrating into CI
+
+To prevent regressions, I added axe-core checks to the test suite:
+
+```typescript
+it('has no accessibility violations', async () => {
+  const { container } = render(<Page />);
+  const results = await axe(container);
+  expect(results.violations).toHaveLength(0);
+});
+```
+
+## Key Takeaways
+
+- **Automated tools catch ~30% of issues** — but they catch the *easy-to-miss* ones
+- **Semantic HTML prevents most violations** — use `<button>`, `<nav>`, `<ul>` instead of styled divs
+- **Every interactive element needs a name** — if it's clickable, it needs to be announced
+- **Run audits on every page** — violations hide in components you don't look at
+
+Accessibility isn't a feature — it's a quality standard.

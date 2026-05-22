@@ -1,0 +1,94 @@
+---
+slug: "tdd-legacy-react"
+title: "Implementing TDD in Legacy React Codebases"
+category: "Testing"
+excerpt: "How I retrofitted a test-driven development workflow into an existing React project using Vitest and React Testing Library — and why writing tests first changed the way I ship code."
+date: "Mar 15, 2025"
+readTime: "9 min read"
+image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=400&fit=crop"
+tags: ["TDD","Vitest","React Testing Library"]
+---
+Adopting TDD in a greenfield project is one thing. Retrofitting it into a codebase with zero tests, implicit dependencies, and no test infrastructure? That's a different challenge entirely. Here's how I did it — and what I learned along the way.
+
+## Starting from Zero
+
+The project had no test runner, no testing utilities, and no CI gate for tests. The first step wasn't writing tests — it was building the foundation:
+
+- **Vitest** as the test runner (fast, native ESM, excellent Vite integration)
+- **React Testing Library** for component testing
+- **jsdom** as the browser environment
+- **`@testing-library/jest-dom`** for expressive assertions
+
+```typescript
+// vitest.config.ts
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+  },
+});
+```
+
+## The Red-Green-Refactor Loop
+
+TDD follows a simple cycle:
+
+1. **Red** — Write a failing test that describes the behavior you want
+2. **Green** — Write the minimum code to make it pass
+3. **Refactor** — Clean up without changing behavior
+
+The discipline is in *not* writing production code before you have a failing test. It feels slow at first, but it eliminates entire categories of bugs.
+
+## What I Tested First
+
+I started with the components that had the highest risk and the most surface area:
+
+### Navigation Component
+- Renders all nav links with correct routes
+- Highlights the active route
+- Mobile menu opens and closes
+- Menu closes on route change
+- External links (mailto) work correctly
+
+### PageLayout Component
+- Renders children content
+- Includes Navigation and Footer
+- Optionally shows SkipToContent for accessibility
+
+### 404 Page
+- Renders the error heading
+- "Return Home" link points to the correct route
+- Uses the PageLayout wrapper
+
+## Writing Testable Components
+
+TDD forces you to write components that are testable by design:
+
+- **Props over internal state** — components become predictable
+- **Semantic HTML** — `getByRole` queries just work
+- **Separation of concerns** — logic is extractable and testable in isolation
+
+```typescript
+// Testing behavior, not implementation
+it('closes mobile menu on route change', () => {
+  render(<Navigation />, { wrapper: MemoryRouter });
+  fireEvent.click(screen.getByLabelText(/open menu/i));
+  expect(screen.getByRole('navigation')).toBeVisible();
+  // Simulate route change...
+  expect(screen.queryByRole('navigation')).not.toBeVisible();
+});
+```
+
+## Lessons Learned
+
+1. **Start with integration tests** — they catch more real bugs per test than unit tests
+2. **Use `screen` queries** — they're more readable and closer to how users interact
+3. **Wrap renders in `MemoryRouter`** — any component using `Link` or `useLocation` needs routing context
+4. **Mock sparingly** — the more you mock, the less your tests tell you
+
+## The Payoff
+
+After setting up TDD, every subsequent feature got tests *before* implementation. Refactoring became fearless. The 12 initial tests caught two regressions within the first week.
+
+TDD isn't about writing more tests — it's about writing *better* code.

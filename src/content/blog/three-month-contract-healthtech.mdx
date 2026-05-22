@@ -1,0 +1,69 @@
+---
+slug: "three-month-contract-healthtech"
+title: "Shipping Fast on a 3-Month Contract"
+category: "Leadership"
+excerpt: "Rapid prototyping and MVP delivery for a healthtech startup under a compressed timeline — lessons in scope management, speed, and knowing when good enough is good enough."
+date: "Feb 5, 2024"
+readTime: "8 min read"
+image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&h=400&fit=crop"
+tags: ["Contract Work","MVP","Startups"]
+---
+Three months. That's all the runway we had to go from Figma mockups to a production-ready MVP. The client was a healthtech startup preparing for a funding round, and the frontend needed to impress investors while being robust enough for beta users.
+
+## Week 1: Setting the Foundation
+
+With only 12 weeks, every decision in week one compounds. I focused on:
+
+- **Tech stack selection** — React + TypeScript + Tailwind. No debates, no experiments. Use what ships fast.
+- **Project structure** — Feature-based folder organization from day one
+- **CI/CD pipeline** — Automated deployments before writing a single feature
+- **Design token system** — Extract colors, spacing, and typography from Figma into CSS variables
+
+## Weeks 2-4: Core Features
+
+The MVP had three critical flows:
+
+1. Patient onboarding
+2. Provider dashboard
+3. Appointment scheduling
+
+I built them in parallel using mock data, then integrated the API layer once the backend team caught up. This decoupling was the single biggest time-saver.
+
+## Weeks 5-8: Integration and Polish
+
+This is where compressed timelines get dangerous. The temptation is to keep adding features. Instead, I:
+
+- **Froze scope** at week 5 — no new features, only refinement
+- **Prioritized mobile** — investors would demo on phones
+- **Added loading and error states** — empty screens kill demos
+- **Performance optimized** — first load under 2 seconds
+
+## Weeks 9-12: Hardening
+
+The final sprint focused on:
+
+- Cross-browser testing
+- Accessibility basics (keyboard nav, screen reader labels)
+- Error boundary implementation
+- Analytics integration for investor metrics
+
+## Scope Management Lessons
+
+The hardest conversations were about what *not* to build:
+
+- **"Can we add real-time chat?"** — No, but we can add a chat placeholder that shows it's planned
+- **"The design has animations everywhere"** — We'll animate the hero and key transitions, not everything
+- **"We need admin features"** — Phase 2. The MVP is patient-facing only.
+
+Saying no kindly but firmly is the most valuable skill in contract work.
+
+## The Result
+
+The MVP launched on time. The client secured their funding round. Three months later, they brought me back for a follow-up engagement to build the features we'd deferred.
+
+## Key Takeaways
+
+1. **Velocity comes from decisions, not typing speed** — decide fast, build fast
+2. **Mock data unblocks everything** — don't wait for the backend
+3. **Scope freezes save projects** — pick a date and hold the line
+4. **Good enough ships; perfect doesn't** — polish what users see, skip what they don't

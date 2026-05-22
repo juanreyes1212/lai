@@ -1,0 +1,72 @@
+---
+slug: "react-lazy-suspense-route-splitting"
+title: "Shipping Faster First Paint with React.lazy + Suspense"
+category: "Performance"
+excerpt: "Why route-level code splitting is the cheapest performance win in a Vite + React app — and the trade-offs nobody tells you about fallbacks, layout shift, and chunk granularity."
+date: "May 11, 2026"
+readTime: "5 min read"
+image: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=800&h=400&fit=crop"
+tags: ["React","Vite","Performance"]
+---
+Route-level code splitting is one of those changes that feels almost too easy: a couple of `React.lazy()` calls, a `<Suspense>` boundary, and suddenly your initial JS payload drops by 40–60%. But there are real trade-offs once you wire it up to a router with page transitions.
+
+## The before picture
+
+Every page in this portfolio used to be a static `import` at the top of `AnimatedRoutes.tsx`. That meant the very first paint of the home page had to download — and parse — the JS for the resume page, every blog post, every project detail screen. None of which the visitor was looking at.
+
+```tsx
+import Work from "@/pages/Work";
+import Resume from "@/pages/Resume";
+// ...all eagerly bundled into the initial chunk
+```
+
+## The after picture
+
+```tsx
+const Work = lazy(() => import("@/pages/Work"));
+const Resume = lazy(() => import("@/pages/Resume"));
+
+<Route
+  path="/resume"
+  element={
+    <Suspense fallback={<PageSkeleton variant="resume" />}>
+      <Resume />
+    </Suspense>
+  }
+/>
+```
+
+Vite sees each dynamic `import()` as a chunk boundary and emits one JS file per route. The browser only fetches what the user asks for.
+
+## When lazy actually hurts
+
+Lazy is a bet that the deferred chunk won't be needed soon. If it *is* needed soon, you've added a network round-trip on top of parsing. Two cases where I keep things eager:
+
+1. **The landing route.** Lazy-loading `/` means an extra waterfall before first paint. Keep it static.
+2. **Components that re-render frequently inside an already-loaded page.** `React.lazy` is for routes and big, rarely-shown surfaces (modals, editors), not for every component.
+
+## Picking a fallback that doesn't cause CLS
+
+The other footgun is the `fallback`. If your fallback is shorter than the real page, the browser paints a stub, then jumps when the real content arrives — that's Cumulative Layout Shift. I reused the existing `<PageSkeleton />` component with the same variant the route already uses for its enter animation:
+
+```tsx
+<Suspense fallback={<PageSkeleton variant="grid" />}>
+  <Blog />
+</Suspense>
+```
+
+Same height, same grid, same vertical rhythm. The transition from skeleton to real content is invisible.
+
+## Measuring the win
+
+Open DevTools → Network → filter by JS, throttle to "Fast 3G", and reload the home page twice — once before, once after. The metrics that moved on this site:
+
+- **Initial JS transferred:** down ~55%
+- **Largest Contentful Paint:** down ~280ms on a mid-tier phone
+- **Time to Interactive:** down ~400ms
+
+Numbers will vary wildly by app size, but the *shape* of the win is reliable.
+
+## Takeaway
+
+Route-level splitting is a no-brainer for any multi-page React app with more than a handful of routes. Spend ten minutes on it, pick fallbacks that match real layouts, and don't lazy-load your landing page.

@@ -1,0 +1,78 @@
+---
+slug: "state-management-2024"
+title: "Modern State Management in React: Beyond Redux"
+category: "React"
+excerpt: "Exploring modern state management solutions including Zustand, Jotai, and React Query for different use cases."
+date: "Jun 15, 2024"
+readTime: "11 min read"
+image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=400&fit=crop"
+tags: ["React","State Management","Zustand"]
+---
+The React state management landscape has evolved significantly. Redux isn't always the answer anymore. Let's explore when to use what.
+
+## The State Categories
+
+First, categorize your state:
+
+1. **Server state** - Data from APIs (use React Query/SWR)
+2. **Client state** - UI state, form state (use local state/Zustand)
+3. **URL state** - Filters, pagination (use router state)
+4. **Form state** - Input values, validation (use React Hook Form)
+
+Each category has optimal solutions.
+
+## React Query for Server State
+
+React Query has revolutionized how we handle server state:
+
+```typescript
+const { data, isLoading, error } = useQuery({
+  queryKey: ['users'],
+  queryFn: fetchUsers,
+});
+```
+
+It handles caching, background refetching, optimistic updates, and more.
+
+## Zustand for Simple Client State
+
+Zustand provides a minimal, hook-based API:
+
+```typescript
+const useStore = create((set) => ({
+  count: 0,
+  increment: () => set((state) => ({ count: state.count + 1 })),
+}));
+```
+
+Perfect for global client state without boilerplate.
+
+## Jotai for Atomic State
+
+Jotai excels at fine-grained reactivity:
+
+```typescript
+const countAtom = atom(0);
+const doubleAtom = atom((get) => get(countAtom) * 2);
+```
+
+Great for complex derived state and avoiding unnecessary re-renders.
+
+## When Redux Still Makes Sense
+
+Redux remains valuable for:
+
+- Complex state with many reducers
+- Time-travel debugging requirements
+- Strong TypeScript support with RTK
+- Teams already familiar with Redux patterns
+
+## My Recommendations
+
+- Start with React's built-in state
+- Add React Query for server state early
+- Use Zustand when you need global client state
+- Consider Jotai for complex atomic state
+- Use Redux for large teams with complex requirements
+
+The best state management is the minimum state management needed.
