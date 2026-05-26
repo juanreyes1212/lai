@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { useTheme } from "@/hooks/useTheme";
 
 const navItems = [
   { label: "Work", href: "/work" },
@@ -19,6 +20,7 @@ const Navigation = () => {
   const location = useLocation();
   const prefersReducedMotion = useReducedMotion();
   const mobileMenuRef = useFocusTrap(isMobileMenuOpen);
+  const { theme, toggle: toggleTheme } = useTheme();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -88,7 +90,16 @@ const Navigation = () => {
             ))}
           </nav>
 
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              aria-pressed={theme === "light"}
+              className="p-2 rounded-md text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {theme === "dark" ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+            </button>
             <Button size="sm" asChild>
               <a href="mailto:reyes1212@gmail.com">Get In Touch</a>
             </Button>
