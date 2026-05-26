@@ -22,7 +22,7 @@ The mental model that unlocked the migration: blog posts are two different shape
 
 Keep metadata in TypeScript (typed, easily filtered). Move content to per-slug `.mdx` files (markdown-native authoring, lazy-loadable).
 
-\`\`\`text
+```text
 src/
   data/portfolioData.ts   ← slim metadata index (19 KB, down from 82 KB)
   content/
@@ -30,11 +30,11 @@ src/
       <slug>.mdx          ← 23 files, one per post
     blogLoader.ts         ← slug -> React.lazy(MDX)
     mdxComponents.tsx     ← styling for h1, p, code, etc.
-\`\`\`
+```
 
 ## The Vite plugin
 
-\`\`\`ts
+```ts
 // vite.config.ts
 import mdx from "@mdx-js/rollup";
 import remarkGfm from "remark-gfm";
@@ -48,7 +48,7 @@ export default defineConfig({
     react(),
   ],
 });
-\`\`\`
+```
 
 Two flags matter:
 
@@ -57,65 +57,65 @@ Two flags matter:
 
 ## The dynamic import map
 
-\`\`\`ts
+```ts
 // src/content/blogLoader.ts
 const modules = import.meta.glob<{ default: ComponentType }>("./blog/*.mdx");
 
 export const loadMdxPost = (slug: string) => {
   const entry = Object.entries(modules)
-    .find(([path]) => path.endsWith(\`/\${slug}.mdx\`));
+    .find(([path]) => path.endsWith(`/${slug}.mdx`));
   return entry ? lazy(entry[1]) : null;
 };
-\`\`\`
+```
 
-\`import.meta.glob\` without \`eager: true\` returns a map of dynamic-import factories. Vite turns each one into its own chunk, so visiting \`/blog/a\` ships only \`a.mdx\`'s bytes, never \`b.mdx\`'s.
+`import.meta.glob` without `eager: true` returns a map of dynamic-import factories. Vite turns each one into its own chunk, so visiting `/blog/a` ships only `a.mdx`'s bytes, never `b.mdx`'s.
 
 ## The render swap
 
-The article body in \`BlogPost.tsx\` went from this:
+The article body in `BlogPost.tsx` went from this:
 
-\`\`\`tsx
+```tsx
 <MarkdownRenderer content={post.content} />
-\`\`\`
+```
 
 To this:
 
-\`\`\`tsx
+```tsx
 <MDXProvider components={mdxComponents}>
   <Suspense fallback={<Skeleton />}>
     <MdxContent />
   </Suspense>
 </MDXProvider>
-\`\`\`
+```
 
-The \`mdxComponents\` map is the same styling that \`MarkdownRenderer\` had hard-coded for ReactMarkdown — same Tailwind classes, same syntax highlighter — just keyed off MDX's component slots instead of ReactMarkdown's. Rendered output is byte-identical.
+The `mdxComponents` map is the same styling that `MarkdownRenderer` had hard-coded for ReactMarkdown — same Tailwind classes, same syntax highlighter — just keyed off MDX's component slots instead of ReactMarkdown's. Rendered output is byte-identical.
 
 ## The migration safety net
 
 Migrating 23 posts by hand would have meant 23 chances to drop a backtick. Instead, a 20-line Bun script did it:
 
-\`\`\`ts
+```ts
 import { blogPosts } from "./src/data/portfolioData";
 for (const post of blogPosts) {
   const fm = [
     "---",
-    \`slug: \${JSON.stringify(post.slug)}\`,
-    \`title: \${JSON.stringify(post.title)}\`,
+    `slug: ${JSON.stringify(post.slug)}`,
+    `title: ${JSON.stringify(post.title)}`,
     // ...rest of metadata
     "---",
     "",
   ].join("\\n");
-  writeFileSync(\`src/content/blog/\${post.slug}.mdx\`, fm + post.content);
+  writeFileSync(`src/content/blog/${post.slug}.mdx`, fm + post.content);
 }
-\`\`\`
+```
 
-\`JSON.stringify\` handles every edge case YAML cares about — quotes, colons, special chars — for free.
+`JSON.stringify` handles every edge case YAML cares about — quotes, colons, special chars — for free.
 
-A second script slimmed \`portfolioData.ts\`: parse the file, find the \`blogPosts\` array literal, replace it with a regenerated version that drops the \`content\` field. The diff was 1,951 → 480 lines.
+A second script slimmed `portfolioData.ts`: parse the file, find the `blogPosts` array literal, replace it with a regenerated version that drops the `content` field. The diff was 1,951 → 480 lines.
 
 ## What broke (briefly)
 
-Two things, both caught on first \`tsc --noEmit\`:
+Two things, both caught on first `tsc --noEmit`:
 
 1. **The fallback path** — I initially returned `null` from `loadMdxPost` for missing slugs, but `BlogPost` then unconditionally rendered `<MdxContent />`. A conditional render and a "content unavailable" fallback fixed it. (No slug should ever miss in production — the metadata index is the source of truth — but failing closed beats a white screen.)
 2. **`post.content` references** — TS caught every stale read instantly because the type narrowed when I deleted the field.

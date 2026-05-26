@@ -61,6 +61,53 @@
 
   }
 
+  /* Light theme — warm paper background, deeper copper for AA contrast on light surfaces */
+  .light {
+    --background: 40 30% 97%;
+    --foreground: 220 25% 12%;
+
+    --card: 40 25% 99%;
+    --card-foreground: 220 25% 12%;
+
+    --popover: 40 25% 99%;
+    --popover-foreground: 220 25% 12%;
+
+    --primary: 22 80% 38%;
+    --primary-foreground: 40 30% 97%;
+
+    --secondary: 40 15% 92%;
+    --secondary-foreground: 220 25% 18%;
+
+    --muted: 40 15% 90%;
+    --muted-foreground: 220 12% 38%;
+
+    --accent: 30 80% 40%;
+    --accent-foreground: 40 30% 97%;
+
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 40 30% 97%;
+
+    --border: 40 15% 85%;
+    --input: 40 15% 88%;
+    --ring: 22 80% 38%;
+
+    --copper: 22 80% 38%;
+    --gold: 30 80% 40%;
+
+    --success: 142 65% 35%;
+    --info: 199 85% 40%;
+    --warning: 30 80% 40%;
+
+    --gradient-copper: linear-gradient(135deg, hsl(22 80% 38%) 0%, hsl(30 80% 40%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(40 30% 98%) 0%, hsl(40 25% 95%) 50%, hsl(40 30% 97%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(40 25% 99%) 0%, hsl(40 20% 95%) 100%);
+    --gradient-glow: radial-gradient(ellipse 600px 400px at 50% 0%, hsl(22 80% 38% / 0.10) 0%, transparent 70%);
+
+    --shadow-copper: 0 0 60px -15px hsl(22 80% 38% / 0.25);
+    --shadow-card: 0 25px 50px -12px hsl(220 25% 12% / 0.12);
+    --shadow-glow: 0 0 80px hsl(22 80% 38% / 0.12);
+  }
+
 }
 
 @layer base {

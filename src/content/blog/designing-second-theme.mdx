@@ -1,0 +1,108 @@
+---
+slug: "designing-second-theme"
+title: "Designing a Second Theme After Committing to One"
+category: "Design Systems"
+excerpt: "Adding a light theme to a site that was designed dark-first took about 80 lines — but only because every color was already an HSL token. Here is what made it cheap, and the contrast traps I had to chase down."
+date: "May 24, 2026"
+readTime: "5 min read"
+image: "https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=800&h=400&fit=crop"
+tags: ["Theming", "HSL", "Tailwind"]
+---
+
+This site was designed dark-first. Deep navy background, copper primary, gold accent — the palette is the brand. So why add a light mode? Two reasons: (1) outdoor readability on a phone in the Arizona sun is genuinely bad with a dark UI, and (2) it forced me to audit every place a color value had quietly leaked outside the design system.
+
+The whole feature is ~80 lines. It's cheap because the foundation was right. Here's what made it work.
+
+## HSL tokens did 90% of the work
+
+Every color on this site is declared once, in `index.css`, as a CSS custom property in HSL space:
+
+```css
+:root {
+  --background: 220 20% 6%;
+  --foreground: 45 20% 95%;
+  --primary: 30 85% 55%;
+  /* ...30 more tokens */
+}
+```
+
+Adding a second theme is just a second declaration block, scoped to a class:
+
+```css
+.light {
+  --background: 40 30% 97%;
+  --foreground: 220 25% 12%;
+  --primary: 22 80% 38%;
+  /* same token names, different values */
+}
+```
+
+Toggle the class on `<html>` and every component re-themes. No component code changes. No conditional Tailwind classes. No `dark:` variants sprinkled through 60 files.
+
+This is the payoff of the rule I'd been writing in every PR review for a year: **never hard-code a color in a component**. Use the token. Future-you will need that token to mean something different.
+
+## Why HSL specifically, not hex or RGB
+
+HSL is the only common color format where the three numbers map cleanly to *intent*:
+
+- Hue — which family of color (orange, blue)
+- Saturation — how vivid
+- Lightness — how bright
+
+When I drop `--primary` from 55% lightness (dark theme) to 38% (light theme), I'm not picking a different brand color — I'm picking the *same brand color, darker, so it stays accessible against a white surface*. With hex you'd be eyeballing it; with HSL you're tweaking one number.
+
+The Tailwind config already wraps everything in `hsl(var(--token))`, so swapping the underlying numbers is invisible to the component layer.
+
+## Preventing the flash of wrong theme
+
+The naive flow is: React mounts, reads localStorage, applies the class. But between HTML parse and React hydration there are 200–800ms of dark background showing to a user who saved "light". That's the flash.
+
+Fix: a tiny inline script in `index.html` that runs before any CSS-driven render:
+
+```html
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem("theme");
+      if (t === "light") document.documentElement.classList.add("light");
+    } catch (e) {}
+  })();
+</script>
+```
+
+Three things matter here:
+
+1. **Inline, no defer/async.** It has to block paint. External scripts don't.
+2. **Synchronous localStorage.** No async storage, no IndexedDB — they don't complete in time.
+3. **Try/catch.** Privacy-mode browsers throw on `localStorage.getItem`. Catch and fall through to the default (dark).
+
+The React hook reads the same key and mirrors state, so the UI toggle reflects what the inline script already applied.
+
+## The hardcoded colors I found
+
+The light mode was the audit. Three sneaky leaks:
+
+- **`text-shadow: 0 0 40px hsl(30 85% 55% / 0.5)`** in a `.glow-text` utility. Hardcoded copper. Looks great on dark, invisible on light. Replaced with `hsl(var(--primary) / 0.5)`.
+- **`background: rgba(0, 0, 0, 0.5)`** on an image gradient overlay. Replaced with `hsl(var(--background) / 0.5)`.
+- **An SVG `fill="#0a0a0a"`** in a Tailwind background-image data-URL for noise texture. Left alone — the noise is barely visible in either theme.
+
+Tools that helped: `rg "#[0-9a-fA-F]{3,6}"` and `rg "rgba?\("` scoped to `src/`. Five minutes of grep, fifteen minutes of fixes.
+
+## Contrast audits per theme
+
+WCAG AA needs 4.5:1 for normal text. The dark theme's copper (`30 85% 55%`) on the dark background hits 7.2:1 — comfortable. That same copper on the light background hits 2.8:1 — fail.
+
+So the light theme uses a *darker* copper: lightness 38% instead of 55%. Same hue, same saturation, deeper. It scores 5.1:1 on the light background and still reads as "copper", not "brown".
+
+Quick audit method:
+1. Apply `.light` to `<html>` in DevTools.
+2. Run the existing `vitest-axe` suite — axe checks contrast for free.
+3. Visually scan for any token that "looks wrong" — usually a gradient or shadow where lightness needs to invert.
+
+## What I didn't do
+
+- **`prefers-color-scheme` defaulting.** I considered respecting the system preference on first visit. Decided against it: the site is dark-first by design, and surprising users on first paint trades a small UX win for brand consistency. Visitors who toggle the button get persisted. Anyone who wants system-following can roll their own.
+- **Animating the theme transition.** A 200ms color crossfade looks great in isolation and terrible on a complex page where every shadow, gradient, and image overlay re-animates out of sync. Instant swap is honest.
+- **A third theme.** Three themes is a real maintenance cost (every new color decision is now three decisions). The bar to add one is "an audience needs it", not "it would be cool".
+
+The lesson worth taking away from this isn't about theming — it's about the discipline that made theming trivial. Build the tokens you'll need before you need them, and the day "add a light mode" lands in the backlog, you write 80 lines instead of 800.
