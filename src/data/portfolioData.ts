@@ -134,6 +134,16 @@ export const personalProjects = [
 // Blog Posts Data
 export const blogPosts = [
   {
+    slug: "designing-second-theme",
+    title: "Designing a Second Theme After Committing to One",
+    category: "Design Systems",
+    excerpt: "Adding a light theme to a site that was designed dark-first took about 80 lines — but only because every color was already an HSL token. Here is what made it cheap, and the contrast traps I had to chase down.",
+    date: "May 24, 2026",
+    readTime: "5 min read",
+    image: "https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=800&h=400&fit=crop",
+    tags: ["Theming","HSL","Tailwind"],
+  },
+  {
     slug: "stringly-typed-markdown-to-mdx",
     title: "From Stringly-Typed Markdown to MDX Without Breaking the Build",
     category: "Engineering",
