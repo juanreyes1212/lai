@@ -1,6 +1,7 @@
 import Navigation from "./Navigation";
 import Footer from "./Footer";
 import SkipToContent from "@/components/SkipToContent";
+import CommandPalette from "@/components/CommandPalette";
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ const PageLayout = ({ children }: PageLayoutProps) => {
       {children}
 
       <Footer />
+      <CommandPalette />
     </div>
   );
 };
