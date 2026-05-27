@@ -134,6 +134,16 @@ export const personalProjects = [
 // Blog Posts Data
 export const blogPosts = [
   {
+    slug: "cmdk-palette-single-source-navigation",
+    title: "Adding a Cmd+K Palette as a Single Source of Navigation Truth",
+    category: "UX",
+    excerpt: "A 180-line component and one dependency (cmdk) turn portfolioData.ts into a searchable index of every page, project, and post — plus theme toggle and resume download as palette actions.",
+    date: "May 26, 2026",
+    readTime: "6 min read",
+    image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&h=400&fit=crop",
+    tags: ["Search","Keyboard","cmdk"],
+  },
+  {
     slug: "designing-second-theme",
     title: "Designing a Second Theme After Committing to One",
     category: "Design Systems",
