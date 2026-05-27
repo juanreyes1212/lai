@@ -1,0 +1,151 @@
+---
+title: "Adding a Cmd+K Palette as a Single Source of Navigation Truth"
+date: "May 26, 2026"
+---
+
+A portfolio has maybe 30 navigable things: five pages, four work projects, four
+personal projects, and ~25 blog posts. The header nav surfaces five of them.
+The other 33 are reachable, but you have to know the URL or click through.
+
+Cmd+K fixes that with about 180 lines of code and one dependency.
+
+## Why a palette instead of a search page
+
+A `/search` route would do the same job — but it requires:
+
+- A route, a layout, an empty state, a results component
+- A focus management story (where does focus go on submit?)
+- A back-button story (does typing push history?)
+
+A palette ships none of that. It's a modal that opens on `⌘K`, lists everything,
+filters as you type, and navigates on `Enter`. The browser URL only changes when
+you commit. That's the whole UX.
+
+## The library decision
+
+I considered three options:
+
+1. **Build it from scratch** with the existing `useFocusTrap` hook. Doable, but
+   I'd reinvent fuzzy matching, ARIA combobox semantics, arrow-key navigation,
+   and selection state.
+2. **Algolia DocSearch.** Overkill for a portfolio, and it indexes by crawling
+   — meaning local changes don't show up until a recrawl.
+3. **`cmdk` by pacocoursey.** ~14 KB gzipped, uses Radix Dialog under the hood
+   (so a11y is correct), exposes `Command.Dialog`, `Command.Input`,
+   `Command.List`, `Command.Group`, `Command.Item`. Filtering is built in.
+
+`cmdk` won. It's the library Linear and Vercel use, and the API is small enough
+to wrap in a single component.
+
+## The index
+
+The "single source of truth" part matters more than the palette itself. Every
+item the user can navigate to lives in `src/data/portfolioData.ts`:
+
+```ts
+const items = [
+  ...pages,                       // /, /work, /personal, /blog, /resume
+  ...workProjects.map(toItem),    // /work/:slug
+  ...personalProjects.map(toItem),// /personal/:slug
+  ...blogPosts.map(toItem),       // /blog/:slug
+  ...actions,                     // theme toggle, download resume, email
+];
+```
+
+When I add a new blog post (an `.mdx` file plus an entry in `blogPosts`), the
+palette picks it up automatically. There's no second index to maintain.
+
+## Filtering: keywords matter more than fuzzy
+
+`cmdk` filters on the `value` prop of each `Command.Item`. I concatenate the
+visible label, the secondary hint (company, status, category), and the
+keywords:
+
+```tsx
+<Command.Item
+  value={`${item.label} ${item.hint ?? ""} ${item.keywords?.join(" ") ?? ""}`}
+  onSelect={item.perform}
+>
+```
+
+For a work project, `keywords` is the tech stack. So typing "typescript" finds
+PetSmart even though "TypeScript" isn't in the title. For a blog post,
+`keywords` is the tag list — "WCAG" surfaces the certification post and the
+axe-core post.
+
+This is more useful than fuzzy matching by a wide margin. Fuzzy matching helps
+when users typo — but on a portfolio they're usually searching for a concept.
+
+## Actions, not just links
+
+The palette isn't just navigation. Three items perform actions:
+
+- **Toggle theme.** Calls the `useTheme` hook's `toggle()`.
+- **Download resume.** Opens `/resume.pdf` in a new tab.
+- **Email Juan.** Sets `window.location.href = "mailto:…"`.
+
+This is where palettes earn their keep on a real product. On a portfolio it's
+modest, but the pattern scales: a logged-in app could expose "create new
+project", "invite teammate", "open settings" — all without cluttering the UI.
+
+## Keyboard shortcut: both `⌘K` and `Ctrl+K`
+
+```ts
+useEffect(() => {
+  const onKeyDown = (e: KeyboardEvent) => {
+    if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      setOpen((o) => !o);
+    }
+  };
+  document.addEventListener("keydown", onKeyDown);
+  return () => document.removeEventListener("keydown", onKeyDown);
+}, []);
+```
+
+Two things to note:
+
+- Check both `e.key === "k"` and `"K"`. Shift+Cmd+K is a different shortcut, but
+  if Caps Lock is on you still want the palette to open on Cmd+K.
+- `preventDefault()` is essential — Chrome's default `⌘K` focuses the address
+  bar.
+
+I don't bind `/` like GitHub does. On a portfolio it's a footgun: visitors
+typing in the URL search wouldn't expect a modal to pop open.
+
+## A11y is already handled — mostly
+
+`cmdk`'s `Command.Dialog` wraps Radix Dialog, which gives you:
+
+- Focus trap inside the modal
+- Focus returned to the trigger on close
+- `Escape` closes
+- `aria-modal` and a proper `role`
+- Scroll lock on the body
+
+What's not handled: a visible label. I pass `label="Command palette"` which
+becomes the `aria-label`. Screen readers announce "Command palette, dialog"
+on open.
+
+## The shortcut hint nobody reads
+
+I added a footer with `↑↓ navigate · ↵ select · ⌘K toggle`. Nobody reads it
+the first time, but it's there for the second time — when a user remembers
+"there was a search thing" and wants to confirm the shortcut.
+
+## What I would not do
+
+- **Don't index off-site links.** A palette that suggests "GitHub" and opens a
+  new tab feels noisy. Keep external links in the footer.
+- **Don't auto-execute on first match.** Some palettes Enter-to-go even when
+  the user has only typed one character. It's surprising. Wait for the explicit
+  Enter.
+- **Don't track palette opens in analytics.** It's a power-user feature; the
+  numbers will be low and the signal noisy.
+
+## File
+
+The palette lives at `src/components/CommandPalette.tsx` and is mounted once
+in `PageLayout` so it's available on every route. The whole component is one
+file because it's not reused — and inlining the item list keeps the
+"single source of truth" guarantee visible.
