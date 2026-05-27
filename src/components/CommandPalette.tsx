@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Command } from "cmdk";
 import { useNavigate } from "react-router-dom";
-import { Search, FileText, Briefcase, User, BookOpen, Home, FileDown, Sun, Moon } from "lucide-react";
+import { Search, FileText, Briefcase, User, BookOpen, Home, FileDown, Sun, Moon, type LucideIcon } from "lucide-react";
 import { workProjects, personalProjects, blogPosts } from "@/data/portfolioData";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -10,7 +10,7 @@ type Item = {
   label: string;
   hint?: string;
   group: "Pages" | "Work" | "Personal" | "Blog" | "Actions";
-  icon: React.ComponentType<{ size?: number; "aria-hidden"?: boolean }>;
+  icon: LucideIcon;
   perform: () => void;
   keywords?: string[];
 };
