@@ -1,0 +1,112 @@
+---
+title: "A Barcode Scanner in 200 Lines: ZXing, Open Food Facts, and the Portion Field That Saved It"
+date: "May 28, 2026"
+---
+
+The food log started with a manual form: name, calories, protein, carbs, fat,
+serving size. It worked, but logging a yogurt cup meant typing the same six
+fields I'd typed yesterday. Scanning a barcode is faster — and a phone camera
+plus a free product database makes it free to build.
+
+## Three pieces, one feature
+
+1. **`@zxing/browser`** — decodes barcodes from a `MediaStream`. EAN-13,
+   UPC-A, Code-128. Pure JS, no native dependency.
+2. **Open Food Facts** — a 5M+ product database with a free, no-auth REST
+   endpoint: `GET https://world.openfoodfacts.org/api/v0/product/{barcode}.json`.
+3. **A portion multiplier field** — the thing I forgot until I shipped it
+   and immediately needed.
+
+## The scanner
+
+```tsx
+const reader = new BrowserMultiFormatReader();
+const controls = await reader.decodeFromVideoDevice(
+  selectedDeviceId,
+  videoRef.current,
+  (result, err) => {
+    if (result) onDetected(result.getText());
+  }
+);
+return () => controls.stop();
+```
+
+That's the entire integration. The UX is a full-screen video with a
+targeting frame, an animated scan line, and corner brackets. The library
+handles continuous decoding; I just listen.
+
+Two things I had to learn the hard way:
+
+- **Always pick the rear camera when one exists.** `enumerateDevices()`
+  returns front + rear; on iPhone the front camera is the default. A
+  scanner that opens the selfie camera is a broken scanner.
+- **Stop the stream on unmount.** Forgetting `controls.stop()` leaves the
+  camera light on and drains the battery. The cleanup function in the
+  effect is non-negotiable.
+
+## Open Food Facts: free, but not magic
+
+The API is generous — no auth, no rate limit I've ever hit, CORS open. It
+returns a wonderfully chaotic JSON shape because the data is community-
+sourced and inconsistent across regions. The fields I care about:
+
+```ts
+const p = json.product;
+const perServing = p.nutriments;
+const nameGuess  = p.product_name_en || p.product_name || p.generic_name;
+const servingG   = parseFloat(p.serving_size) || 100;
+```
+
+About 15% of barcodes I scan from a US pantry come back as "product not
+found" because Open Food Facts skews European. The fallback is the "I'm
+not sure" estimator I'd already built — same dialog, same form, the user
+just types the name and a serving mass and the macros are estimated from
+a keyword table.
+
+## The portion field I shipped without
+
+The first version filled the form with Open Food Facts' "per serving"
+values and called it done. Then I scanned a yogurt cup and ate two. The
+log said 110 kcal. I ate 220.
+
+The fix is a `portion` number input that defaults to `1.0` and
+multiplies every macro before submit:
+
+```ts
+const factor = Number(portion) || 1;
+const payload = {
+  calories: Math.round(baseCalories * factor),
+  protein:  +(baseProtein  * factor).toFixed(1),
+  carbs:    +(baseCarbs    * factor).toFixed(1),
+  fat:      +(baseFat      * factor).toFixed(1),
+  serving:  `${(baseServingG * factor).toFixed(0)}g`,
+};
+```
+
+Two scanned products show this matters: bulk almonds (the package serving
+is 28 g, I eat 50) and a chicken breast (250 g package, I eat half). The
+portion field turned a frustrating "edit every field" into one number.
+
+## Per-product memory
+
+The next iteration — not built yet — is remembering the last portion I
+used for a given barcode. If I always eat 0.5 of a Costco chicken breast,
+the scanner should pre-fill `0.5`. That's a `last_portion` column on a
+`product_history` table keyed by barcode, looked up before the form
+renders.
+
+## What I would not build
+
+- **A custom product database.** Maintaining product nutrition data is a
+  full-time job for a team. Open Food Facts plus a "not found" fallback
+  covers 85% of real-world scans and degrades gracefully on the rest.
+- **A barcode lookup without a scanner.** Typing a 13-digit number defeats
+  the whole point. If the camera doesn't work, the keyword estimator is
+  the better fallback.
+- **Multiple camera quality tiers.** I tried tuning resolution. Default is
+  fine; ZXing handles low-light well enough on modern phones.
+
+The whole feature — scanner component, Open Food Facts client, dialog
+integration, portion math — landed in just under 200 lines. The longest
+file is the camera UI. The actual barcode-to-macros pipeline is about 40
+lines of glue.

@@ -1,0 +1,92 @@
+---
+title: "Nutrition Goal Presets vs. Sliders: When to Decide for the User"
+date: "May 27, 2026"
+---
+
+The nutrition goals panel had to answer one question: should the user
+type their own daily targets, or should the app give them a starting
+point? Both — but in that order, and the order matters.
+
+## What didn't work
+
+The first version was four number inputs: calories, protein, carbs, fat.
+That's the "do it yourself" approach. It's honest, it's flexible, and
+it's the wrong default. Nobody opens a fitness tracker for the first
+time knowing they want 195 g of protein. They know they want to *get
+leaner*, or *bulk*, or *maintain*.
+
+Presenting four blank fields is asking the user to do macro math before
+the app has done anything for them.
+
+## Four presets, one tap
+
+The second version puts four preset buttons at the top of the dialog:
+
+- **Lean Muscle** — 2,800 kcal · 200 P · 300 C · 80 F
+- **Clean Bulk** — 3,200 kcal · 220 P · 380 C · 95 F
+- **Maintenance** — 2,400 kcal · 160 P · 270 C · 75 F
+- **Cut** — 2,000 kcal · 180 P · 180 C · 65 F
+
+Tapping any preset fills all four input fields. The inputs are still
+editable — so the preset is a *starting point*, not a commitment. The
+user can dial calories up 100 kcal and save. They didn't have to come
+up with the other three numbers from scratch.
+
+## Why the numbers are not personalized at this stage
+
+I considered asking for height, weight, age, and activity level and
+computing TDEE on the fly. I didn't, for three reasons:
+
+1. **Body weight is already tracked elsewhere in the app.** Reusing it
+   here would create a dependency between two screens for a one-time
+   action. Not worth it.
+2. **TDEE formulas are correct on average and wrong individually.**
+   Mifflin-St Jeor will tell two people of the same stats to eat the
+   same calories; one of them will gain, one will lose. The presets
+   are *labels for intent*, not equations for metabolism.
+3. **The AI recommendation layer adjusts the day-to-day numbers based
+   on wearable data anyway.** The preset sets the baseline; the
+   recommendation tunes it.
+
+## What the macro rings do with the goal
+
+Goals aren't decorative. Every macro ring on the food log fills against
+its goal target. The calorie number shows `X of 2,800 kcal` with a
+progress bar. When a ring crosses 100%, it turns red. When calories
+cross the target, the calorie line goes red.
+
+That color change is the entire signal. There's no notification, no
+modal, no "you've exceeded your goal" toast. The ring changes color,
+and the user sees it the next time they log food. Calm by default,
+informative on glance.
+
+## The "Goals" button placement
+
+The button lives in the top-right corner of the Food Log card —
+discoverable but not loud. Putting it in the global nav would have
+implied "this is a thing you manage often." It's not. Most users will
+tap a preset on day one and never open the panel again.
+
+If they do open it — usually because their training phase changed —
+the dialog is two clicks deep and one tap to a new preset. The whole
+interaction is under 5 seconds.
+
+## Persistence
+
+Goals go to the database, not localStorage. The reason isn't
+multi-device sync (this is a single-user MVP). It's that the AI
+recommendation endpoint needs to read the baseline server-side. If the
+baseline lived in the browser, the edge function would have to take it
+as an argument on every request, which would mean the client could lie
+to itself. Server-owned baseline = single source of truth for both the
+UI and the AI layer.
+
+## What this taught me about defaults
+
+A blank form is honest but cruel. Four presets plus editable fields is
+slightly less honest — you're nudging the user toward four particular
+shapes of goal — but it's a much kinder default. The presets aren't
+"the right answers." They're conversation starters.
+
+For a tool people use daily, the day-one experience is the only one
+that gets a fresh chance. Spend the design budget there.

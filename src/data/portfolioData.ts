@@ -116,6 +116,22 @@ export const personalProjects = [
     ]
   },
   {
+    slug: "fittrack",
+    title: "FitTrack — Personal Fitness & Nutrition Tracker",
+    status: "In Development" as const,
+    description: "A private, self-hosted fitness tracker with Apple Watch / Ultrahuman wearable import, barcode food logging via Open Food Facts, AI-powered meal plans, and wearable-aware daily macro recommendations. Built around lean muscle goals — not weight loss.",
+    tech: ["React", "Vite", "PostgreSQL", "Drizzle ORM", "Express", "OpenAI", "ZXing", "Open Food Facts"],
+    image: "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=600&h=400&fit=crop",
+    highlights: [
+      "Health Auto Export & Ultrahuman JSON import with idempotent upserts",
+      "Barcode scanner + Open Food Facts with portion multiplier",
+      "Keyword-based 'I'm not sure' macro estimator (~40 food buckets)",
+      "AI daily macro recommendations from HRV, sleep, and training load",
+      "Nutrition goals: 4 presets (Lean Muscle / Clean Bulk / Maintenance / Cut)",
+      "lbs/kg toggle, structured wellness journal, AI meal plan generator"
+    ]
+  },
+  {
     slug: "budget-tracker",
     title: "Budget Tracker",
     status: "Archived" as const,
@@ -129,7 +145,7 @@ export const personalProjects = [
       "Monthly reports"
     ]
   },
-];
+
 
 // Blog Posts Data
 export const blogPosts = [

@@ -1,0 +1,110 @@
+---
+title: "Designing the 'I'm Not Sure' Button: A Keyword-Based Macro Estimator"
+date: "May 28, 2026"
+---
+
+The honest truth about food logging is that nobody knows the macros of the
+chicken they cooked at home. Restaurant menus don't list them. Bulk almonds
+have a label, but it's on a bag in the pantry, not in the kitchen. And the
+moment a logging app demands four exact numbers per meal, people stop
+logging.
+
+The "I'm not sure" button is a UX surrender that turns out to be a
+feature. The user types what they ate and roughly how much, and the form
+fills itself in with a defensible estimate. Every field stays editable.
+The banner tells them which food group it matched, so they know how much
+to trust the guess.
+
+## The keyword table
+
+The estimator is a flat lookup table — about 40 entries — keyed by
+substrings of common food names:
+
+```ts
+const FOOD_DB: Array<{
+  match: RegExp;
+  label: string;
+  per100g: { cal: number; p: number; c: number; f: number };
+}> = [
+  { match: /chicken breast|chicken fillet/i, label: "Lean chicken",
+    per100g: { cal: 165, p: 31, c: 0,  f: 3.6 } },
+  { match: /salmon/i,                        label: "Salmon",
+    per100g: { cal: 208, p: 20, c: 0,  f: 13 } },
+  { match: /oats|oatmeal/i,                  label: "Oats (dry)",
+    per100g: { cal: 389, p: 17, c: 66, f: 7 } },
+  { match: /greek yogurt/i,                  label: "Greek yogurt",
+    per100g: { cal: 59,  p: 10, c: 3.6,f: 0.4 } },
+  // ... ~36 more
+];
+```
+
+Per-100g values come from the USDA FoodData Central database — public
+domain, well-documented, and accurate enough for a personal tracker.
+Picking the first regex match (rather than fuzzy scoring) is intentional:
+deterministic results are easier to debug than "why did it match that?"
+
+## Parsing the serving size
+
+The second input is "how much" — and people write it however they want.
+"150g", "1 cup", "6 oz", "half a chicken breast". The parser handles
+units and falls back to a sane default:
+
+```ts
+const GRAMS_PER = {
+  g: 1, kg: 1000,
+  oz: 28.35, lb: 453.6,
+  cup: 240, tbsp: 15, tsp: 5,
+} as const;
+
+function parseGrams(input: string, fallback = 100): number {
+  const m = input.toLowerCase().match(/([\d.]+)\s*([a-z]+)?/);
+  if (!m) return fallback;
+  const qty = parseFloat(m[1]);
+  const unit = (m[2] || "g") as keyof typeof GRAMS_PER;
+  return qty * (GRAMS_PER[unit] ?? 1);
+}
+```
+
+"1 cup" of cooked rice and "1 cup" of spinach have very different
+masses, of course — `cup` is a volume, not a weight. The estimate is
+wrong in those cases. But it's wrong in a way that's better than blank,
+and the user can override.
+
+## The trust signal
+
+The most important part of the UI isn't the auto-filled numbers — it's
+the line under them:
+
+> Estimated for ~150g (matched: Lean chicken)
+
+This tells the user three things at a glance:
+
+1. **The mass the estimator used**, so they can sanity-check.
+2. **The food bucket it matched**, so they can tell if it picked the wrong
+   one ("Lean chicken" for grilled chicken thighs is going to be low on
+   fat).
+3. **That this is an estimate**, not a precise lookup.
+
+Without this line, every macro feels like a claim. With it, they feel
+like a starting point. Same numbers, very different UX.
+
+## What I would not do
+
+- **Don't ask an LLM for macros at log time.** I tried it. The latency
+  ruined the flow, and the model confidently hallucinated 320 kcal for
+  100 g of chicken (it's 165). A static table is faster and more
+  honest.
+- **Don't auto-submit.** The whole point is the user reviews and adjusts.
+  Pre-filled fields are a draft, not a commitment.
+- **Don't grow the keyword table indefinitely.** When a food isn't in the
+  table, the fallback is the manual form. That's fine. The table is for
+  the 80% of foods I actually eat.
+
+## What an estimator is for
+
+It's a wedge to keep daily logging frictionless on the days I don't have
+a label in front of me. On those days, "approximately right" beats
+"nothing logged." Across a week, the macro ring is directionally
+accurate, and the trend chart doesn't have holes.
+
+That's the bar. Not USDA precision. Habit-preserving precision.
