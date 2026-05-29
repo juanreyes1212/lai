@@ -145,6 +145,7 @@ export const personalProjects = [
       "Monthly reports"
     ]
   },
+];
 
 
 // Blog Posts Data
