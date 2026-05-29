@@ -200,7 +200,7 @@ export const blogPosts = [
     tags: ["UX","Defaults","Design"],
   },
 
-export const blogPosts = [
+
   {
     slug: "cmdk-palette-single-source-navigation",
     title: "Adding a Cmd+K Palette as a Single Source of Navigation Truth",
