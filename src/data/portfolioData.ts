@@ -116,6 +116,22 @@ export const personalProjects = [
     ]
   },
   {
+    slug: "fittrack",
+    title: "FitTrack — Personal Fitness & Nutrition Tracker",
+    status: "In Development" as const,
+    description: "A private, self-hosted fitness tracker with Apple Watch / Ultrahuman wearable import, barcode food logging via Open Food Facts, AI-powered meal plans, and wearable-aware daily macro recommendations. Built around lean muscle goals — not weight loss.",
+    tech: ["React", "Vite", "PostgreSQL", "Drizzle ORM", "Express", "OpenAI", "ZXing", "Open Food Facts"],
+    image: "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=600&h=400&fit=crop",
+    highlights: [
+      "Health Auto Export & Ultrahuman JSON import with idempotent upserts",
+      "Barcode scanner + Open Food Facts with portion multiplier",
+      "Keyword-based 'I'm not sure' macro estimator (~40 food buckets)",
+      "AI daily macro recommendations from HRV, sleep, and training load",
+      "Nutrition goals: 4 presets (Lean Muscle / Clean Bulk / Maintenance / Cut)",
+      "lbs/kg toggle, structured wellness journal, AI meal plan generator"
+    ]
+  },
+  {
     slug: "budget-tracker",
     title: "Budget Tracker",
     status: "Archived" as const,
@@ -133,6 +149,58 @@ export const personalProjects = [
 
 // Blog Posts Data
 export const blogPosts = [
+  {
+    slug: "apple-watch-to-web-app-bridge",
+    title: "Getting Apple Watch Data Into a Web App Without an iOS Project",
+    category: "Engineering",
+    excerpt: "Apple Watch can't talk to a web app — HealthKit lives behind a native iOS entitlement. Here is how Health Auto Export, a stable JSON shape, and an idempotent import endpoint bridge the gap for an MVP without a Swift codebase.",
+    date: "May 29, 2026",
+    readTime: "6 min read",
+    image: "https://images.unsplash.com/photo-1551830820-330a71b99659?w=800&h=400&fit=crop",
+    tags: ["HealthKit","Wearables","Apple Watch","Integration"],
+  },
+  {
+    slug: "ai-macro-recommendations-from-wearable-data",
+    title: "Letting Wearable Data Drive Macro Recommendations Without Pretending to Be a Doctor",
+    category: "Engineering",
+    excerpt: "HRV, sleep, and training load shape what your body needs today. Here is the prompt design, the ±15% guardrail, the protein floor, and the 'use baseline instead' button that keeps an AI layer honest.",
+    date: "May 29, 2026",
+    readTime: "7 min read",
+    image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=400&fit=crop",
+    tags: ["AI","OpenAI","Wearables","Prompt Design"],
+  },
+  {
+    slug: "barcode-scanner-open-food-facts",
+    title: "A Barcode Scanner in 200 Lines: ZXing, Open Food Facts, and the Portion Field That Saved It",
+    category: "Engineering",
+    excerpt: "ZXing decodes barcodes from a MediaStream, Open Food Facts returns macros from 5M+ products, and a portion multiplier turns 'one scan, edit every field' into 'one scan, one number'.",
+    date: "May 28, 2026",
+    readTime: "5 min read",
+    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&h=400&fit=crop",
+    tags: ["ZXing","Open Food Facts","UX","Mobile Web"],
+  },
+  {
+    slug: "im-not-sure-food-estimator",
+    title: "Designing the 'I'm Not Sure' Button: A Keyword-Based Macro Estimator",
+    category: "UX",
+    excerpt: "Nobody knows the macros of the chicken they cooked at home. A 40-row keyword table, a tolerant unit parser, and a trust-signaling banner turn an unloggable meal into a defensible estimate.",
+    date: "May 28, 2026",
+    readTime: "5 min read",
+    image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&h=400&fit=crop",
+    tags: ["UX","Forms","Nutrition","Heuristics"],
+  },
+  {
+    slug: "nutrition-goals-presets-vs-sliders",
+    title: "Nutrition Goal Presets vs. Sliders: When to Decide for the User",
+    category: "UX",
+    excerpt: "Four blank fields ask the user to do macro math before the app has done anything for them. Four presets plus editable inputs is a nudge, not a commitment — and it changes the day-one experience entirely.",
+    date: "May 27, 2026",
+    readTime: "4 min read",
+    image: "https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=800&h=400&fit=crop",
+    tags: ["UX","Defaults","Design"],
+  },
+
+
   {
     slug: "cmdk-palette-single-source-navigation",
     title: "Adding a Cmd+K Palette as a Single Source of Navigation Truth",

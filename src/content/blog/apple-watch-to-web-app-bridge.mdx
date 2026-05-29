@@ -1,0 +1,120 @@
+---
+title: "Getting Apple Watch Data Into a Web App Without an iOS Project"
+date: "May 29, 2026"
+---
+
+Apple Watch can't talk to a web app. HealthKit lives behind a native iOS
+entitlement, and there's no browser API that crosses into it. So when I started
+building a personal fitness tracker as a web MVP, the first real question was:
+how do workouts, heart rate, HRV, and sleep get from my wrist to a Postgres
+table without me writing a Swift app?
+
+The answer is a free iPhone app called **Health Auto Export** plus a JSON
+import endpoint. That's the whole bridge.
+
+## What I considered first (and why I rejected each)
+
+1. **Build a native iOS companion app.** It's the "correct" answer and the
+   one Apple wants. It also means an Apple Developer account, a TestFlight
+   loop, and maintaining a second codebase for an MVP I'm the only user of.
+2. **Apple HealthKit on the web via a SaaS bridge** (Terra, Vital, Rook).
+   These work, but they're priced for products with users, not for a personal
+   tracker. And they introduce a third party between me and my own health
+   data.
+3. **Manual entry.** Defeats the point of having a watch.
+4. **Health Auto Export → JSON file → upload.** Free, works today, no account
+   to keep alive, and the JSON shape is documented and stable.
+
+Option 4 won. The trade-off is that sync isn't automatic — I open the app
+and tap export when I want fresh data. For a tracker I look at once a day,
+that's fine.
+
+## The import shape
+
+Health Auto Export emits JSON that looks roughly like this:
+
+```json
+{
+  "data": {
+    "workouts": [
+      {
+        "name": "Outdoor Run",
+        "start": "2026-05-28T07:14:00Z",
+        "end":   "2026-05-28T07:52:18Z",
+        "distance": { "qty": 6.21, "units": "km" },
+        "activeEnergyBurned": { "qty": 412, "units": "kcal" },
+        "heartRateAvg": 152
+      }
+    ],
+    "metrics": [
+      { "name": "heart_rate_variability", "data": [...] },
+      { "name": "sleep_analysis",         "data": [...] }
+    ]
+  }
+}
+```
+
+The whole import route is a `POST /api/health-import` that:
+
+1. Validates the top-level shape with Zod
+2. Maps each workout into the existing `workouts` table
+3. Maps HRV / sleep / resting heart rate samples into a `wearable_metrics`
+   table keyed by date
+4. Upserts on `(source, source_id)` so re-importing the same file is a no-op
+
+That last point matters more than it looks. Manual exports overlap — the
+user almost always re-exports a window that includes the last day they
+already uploaded. Without an idempotency key, the dashboard's "weekly
+volume" number doubles every Sunday.
+
+## Why a separate `wearable_metrics` table
+
+I was tempted to dump HRV and sleep into the workouts table since they
+arrive together. I'm glad I didn't. Two reasons:
+
+- **They're on a different cadence.** A workout is an event; HRV is a daily
+  scalar. Joining them is `LEFT JOIN ... ON date(workout.start) = hrv.date`,
+  not a foreign key.
+- **The AI layer reads them independently.** The macro-recommendation
+  prompt needs HRV and sleep without caring whether the user trained that
+  day. Keeping them in their own table means the query stays one line.
+
+## Ultrahuman as a second source
+
+A few weeks in I added support for Ultrahuman ring exports too. Their JSON
+is shaped differently — flatter, no nested `qty`/`units` objects, ISO
+strings for everything. The import route does a quick `source` sniff on
+the payload and routes through one of two normalizers into the same
+`wearable_metrics` row shape.
+
+The lesson: write the normalizer **first**, treat each vendor as a
+parser plugin, and the rest of the app never has to know which device
+the user wears.
+
+## The drag-and-drop UX
+
+The web upload is a single `<input type="file" accept="application/json">`
+behind a dashed border. On drop:
+
+- Show a spinner while the body parses (Apple's exports can be 5 MB+ of JSON)
+- Render a summary card: "Imported 12 workouts, 7 days of HRV, 7 nights of
+  sleep — 3 workouts already on file, skipped."
+- Toast on error with the Zod path that failed validation
+
+The "already on file, skipped" line was a late addition. The first time I
+re-imported and saw the same number come back, I almost shipped a bug
+report against myself before realizing the upsert was working correctly
+and I just hadn't told the user.
+
+## What this is not
+
+This isn't a real-time sync. There is no push from the watch. If I want
+last night's sleep on the dashboard, I open Health Auto Export and tap
+"Export Now." For an MVP I use alone, the friction is acceptable — it
+takes ten seconds and runs over local network.
+
+If I ever need true sync, the right next step is a Shortcuts automation
+on the phone that runs Health Auto Export's CLI on a schedule and POSTs
+the JSON to the same endpoint. The server doesn't change. That's the
+nice part about treating the import as a normalizer over a stable shape:
+the front of the pipe can swap without touching anything behind it.

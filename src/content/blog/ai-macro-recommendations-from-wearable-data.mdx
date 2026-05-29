@@ -1,0 +1,131 @@
+---
+title: "Letting Wearable Data Drive Macro Recommendations Without Pretending to Be a Doctor"
+date: "May 29, 2026"
+---
+
+The fitness tracker already had an AI layer that suggested meal plans
+from a goal ("lean muscle, 2,800 kcal"). The second AI layer is more
+interesting: it reads the last 7 days of HRV, sleep, resting heart rate,
+and training load — and adjusts the day's macros accordingly.
+
+A short run on 5 hours of sleep with a depressed HRV is not the same
+metabolic context as a rest day after 8 hours and a green recovery
+score. The macros for those two days probably shouldn't be identical.
+
+## The shape of the prompt
+
+The recommendation endpoint is one edge function that pulls the last
+week of `wearable_metrics`, the last week of `workouts`, the user's
+baseline goal, and feeds them into a structured tool-call:
+
+```ts
+const tools = [{
+  type: "function",
+  function: {
+    name: "recommend_daily_macros",
+    parameters: {
+      type: "object",
+      properties: {
+        calories: { type: "integer" },
+        protein_g: { type: "integer" },
+        carbs_g: { type: "integer" },
+        fat_g: { type: "integer" },
+        rationale: { type: "string", maxLength: 280 },
+        confidence: { type: "string", enum: ["low", "medium", "high"] },
+      },
+      required: ["calories", "protein_g", "carbs_g", "fat_g",
+                 "rationale", "confidence"],
+    },
+  },
+}];
+```
+
+Three design choices show up in that schema:
+
+1. **`rationale` is capped at 280 characters.** I want a sentence, not a
+   wall of text. If the model can't justify the recommendation in a
+   tweet, it shouldn't make it.
+2. **`confidence` is an enum, not a number.** Asking an LLM for a 0–1
+   confidence score is asking for noise. Three buckets is honest about
+   how much resolution is actually there.
+3. **No `disclaimer` field.** I add the disclaimer in the UI, not from
+   the model. Models love to over-disclaim; I'd rather the legal text
+   be deterministic.
+
+## The system prompt is shorter than you'd think
+
+```
+You are a sports nutrition assistant for a personal fitness tracker.
+The user is training for lean muscle gain, not weight loss.
+Recommend daily macros given the last 7 days of wearable data and
+training history. Adjust upward on high-load days, downward on low
+HRV / poor recovery days. Stay within ±15% of the baseline target.
+Never recommend below 1.6 g/kg protein.
+```
+
+That ±15% guardrail matters. Without it, the model occasionally
+recommended a 600-kcal swing on a single bad-sleep day, which is the
+kind of advice that would wreck someone's relationship with food. The
+guardrail keeps the recommendation in "tune", not "intervention",
+territory.
+
+The 1.6 g/kg protein floor comes from the literature on muscle protein
+synthesis. It's the one nutritional fact I'm willing to hard-code,
+because below it the lean-muscle goal is mechanically impossible.
+
+## What I don't pass to the model
+
+- **No medical history.** The app doesn't collect it; the model
+  doesn't get it.
+- **No raw heart-rate time series.** I pre-aggregate to daily
+  averages and deltas-from-baseline. Sending an hourly array would
+  blow the context window and add no signal at this resolution.
+- **No food log.** That's a deliberate firewall. The recommendation is
+  *what to eat today*, not *what you ate yesterday*. Mixing the two
+  invites the model into prescriptive territory about correcting
+  yesterday's choices — a UX I don't want.
+
+## Rendering the rationale honestly
+
+The recommendation card on the dashboard shows:
+
+> **2,650 kcal · 195P · 280C · 75F**
+> _HRV is 12% below your 7-day baseline and you logged a hard interval
+> session yesterday — pulling carbs down slightly and prioritizing
+> protein for recovery._
+> _Confidence: medium — based on 7 days of data._
+
+The confidence line and data-window are deterministic. Only the middle
+sentence is from the model. Users learn very quickly which sentences
+they can trust word-for-word and which are model output.
+
+## The "ignore this" affordance
+
+Every recommendation has a "use baseline instead" button that reverts
+to the stored nutrition goals. This is the most important button in the
+whole feature. The AI layer is a *suggestion engine*, and the moment it
+feels like an instruction, the user will either obey it on bad days or
+disable it entirely. The escape hatch keeps the relationship healthy.
+
+## Cost and caching
+
+The recommendation runs once a day, on the first dashboard load after
+midnight local time. Result is cached in a `daily_recommendations` table
+keyed by date. A second visit on the same day is a free DB read, not a
+model call. For a personal MVP that's ~30 model calls a month — well
+below any meaningful cost threshold.
+
+## What I will not let it do
+
+- **No exercise prescription.** "You should run 8 km today" crosses a
+  line I'm not qualified to draw for users. The exercise tab shows
+  *what I did*, not what an LLM thinks I should do.
+- **No weight-loss recommendations** unless that's explicitly the goal.
+  The default goal in this app is lean muscle gain; the model is
+  prompted not to suggest deficits, period.
+- **No streak shaming.** A recommendation never references missed
+  workouts or skipped logs. Adherence guilt is the fastest path to
+  closing the app for good.
+
+The AI is a useful layer on top of honest data. It is not, and should
+not pretend to be, a coach.
