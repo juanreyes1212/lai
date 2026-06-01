@@ -1,0 +1,102 @@
+---
+title: "Forward-Only Auth: Letting Guests Book First and Register Later"
+date: "Jun 1, 2026"
+---
+
+The booking wizard on Tails & Scales had a familiar fork in the road:
+require an account before booking, or let anyone book as a guest. The
+first protects data integrity; the second protects the conversion
+rate. The MVP picked guest-first and bolted on a forward-only account
+model that's working better than I expected.
+
+## The rule
+
+You can book without an account. Period. Step 4 of the wizard offers
+a soft account creation prompt — "Create an account to track your
+booking online" — but it's optional, never blocking. Skip it and you
+get every notification by email with your booking reference.
+
+If you *do* create an account later (from the link in the
+confirmation email or anywhere else), the next login surfaces your
+bookings by matching `bookings.contact_email` to `auth.users.email`.
+No "claim this booking" flow, no token, no friction. The email *is*
+the identity claim.
+
+## The schema choice that made it cheap
+
+`clients.user_id` is nullable. A guest booking creates a `clients`
+row with `user_id = null` and `email = 'them@example.com'`. When that
+person registers, an `auth.users` row is created with the same email,
+and a small RPC links the two:
+
+```sql
+CREATE OR REPLACE FUNCTION link_client_on_signup()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  UPDATE public.clients
+  SET user_id = NEW.id
+  WHERE email = NEW.email AND user_id IS NULL;
+  RETURN NEW;
+END;
+$$;
+```
+
+Wired to `auth.users` on insert. Past bookings show up on first
+login, no migration needed.
+
+## What "forward-only" means
+
+It means **we don't retroactively link pre-digital bookings**.
+Kayla's been running Tails & Scales for years on paper and Square
+appointments. Those records are not in the new database. If they
+were, they wouldn't have a clean email-to-booking mapping anyway —
+half the entries are "Sarah's golden retriever, Tuesday."
+
+Forward-only is a scope-protection decision. It says: every booking
+*placed through the new system* will be linkable. Everything that
+predates the system stays where it is. Post-MVP, the owner can
+manually associate historical records from the dashboard if she
+wants — but that's a one-off cleanup tool, not a migration story.
+
+## Why this works for an MVP
+
+The most expensive auth feature is the one nobody wants but
+everybody thinks they need: account-required booking. It kills
+conversion on a service where 30% of clients are first-timers who
+just want a quote. Letting them book as a guest and *quietly link*
+them later if they choose to register gets the best of both:
+
+- First-time bookers see a one-screen wizard, not a registration
+  funnel
+- Repeat clients with an account see a portal with all their history
+- The dashboard sees the same `clients` row either way
+
+## RLS that respects the dual identity
+
+The bookings RLS policy has to handle both states:
+
+```sql
+CREATE POLICY "client reads own bookings"
+ON public.bookings FOR SELECT
+TO authenticated
+USING (
+  contact_email = auth.jwt()->>'email'
+  OR client_id IN (
+    SELECT id FROM public.clients WHERE user_id = auth.uid()
+  )
+);
+```
+
+The email match is the bridge that lets a logged-in user see
+bookings placed *before* they registered. Without it, the linking
+trigger would only catch new bookings, and the past ones would stay
+invisible until the linking happens — which is the wrong order.
+
+## The one thing I'd warn about
+
+Email matching is a soft identity. If a user changes their email in
+Supabase Auth and a stranger registers with the old one, that
+stranger could see the old bookings. The mitigation: the link only
+fires *once* per `clients` row (the `user_id IS NULL` guard), and
+email changes in `auth.users` don't propagate to `clients.email`.
+Worth knowing, not worth blocking the MVP.

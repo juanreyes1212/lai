@@ -1,0 +1,89 @@
+---
+title: "Schema-Ready, Feature-Deferred: Junction Tables for Things You Haven't Built Yet"
+date: "Jun 1, 2026"
+---
+
+A booking in Tails & Scales currently has exactly one pet attached
+to it. Multi-pet bookings are a planned post-MVP feature — the
+pricing model for two-dog grooming has to be worked out with the
+owner before any UI gets built. So the MVP scope is "one pet per
+booking."
+
+But the schema is `booking_pets`, a many-to-many junction table.
+
+## Why pay for the junction table now
+
+The naive version of the MVP schema is a `bookings.pet_id` foreign
+key — one column, one constraint, done. It would have worked for
+day one. It would also have forced a destructive migration the
+moment multi-pet bookings shipped:
+
+1. Add `booking_pets` table
+2. Backfill every existing `bookings.pet_id` into a `booking_pets`
+   row
+3. Drop `bookings.pet_id`
+4. Rewrite every query that joined on `bookings.pet_id`
+5. Re-test every RLS policy that traversed that FK
+6. Coordinate with the deployed front-end so the column drop doesn't
+   break a still-running release
+
+That's a half-day of work and a release window. Compare to: build
+`booking_pets` now, have the wizard insert exactly one row into it,
+and the future multi-pet feature is purely a UI change. Schema
+already supports it. Queries already use the junction. RLS policies
+already traverse the right path.
+
+## The MVP code path
+
+The booking wizard's Step 4 inserts one `booking_pets` row per
+booking. The detail Sheet in the dashboard renders pets as
+`booking.pets.map(...)` even though the array always has length 1.
+The pricing function aggregates over `booking_pets` even though the
+sum is over a single row.
+
+Every read path is *already* the multi-pet path. The single-pet UI
+is a constraint imposed by the wizard, not by the data model.
+
+## The disciplined version of "schema for the future"
+
+This pattern only works if you apply it sparingly. The temptation
+is to model every speculative feature into the schema "just in
+case" — and that's how you end up with `users.preferences` as a
+JSONB column nobody touches for three years, or a `tags` table
+with no UI.
+
+The test I use: **is the deferred feature a clear yes, just blocked
+on a non-engineering decision?** Multi-pet bookings passed that
+test. Kayla wants it, the use case is obvious, the only blocker is
+the pricing conversation. Putting the junction table in now costs
+one extra `INSERT` statement and saves a destructive migration
+later.
+
+A speculative "what if we want webhooks someday" does *not* pass
+that test. No table for that.
+
+## The honest accounting
+
+There's a maintenance cost. Every developer reading the codebase
+sees `booking_pets` and wonders why the UI only ever has one pet.
+That's a comment in the schema migration's summary block:
+
+```sql
+-- booking_pets: many-to-many junction.
+-- MVP inserts exactly one row per booking — multi-pet UI is post-MVP
+-- pending pricing review. This table exists now so the multi-pet
+-- rollout is a UI-only change, not a destructive migration.
+```
+
+Five lines that pay for themselves the first time someone new
+opens that file.
+
+## What I'd watch for
+
+The risk is forgetting to *enforce* single-pet at the wizard level
+and accidentally allowing the user to add a second pet through some
+edge path (deep-linking, an undocumented API call). The mitigation:
+the wizard validates exactly one pet on submit, and there's a
+single integration test that posts a two-pet booking and asserts a
+400 response. When multi-pet ships, that test gets deleted and
+replaced with the new behavior. Until then, it's the guardrail.

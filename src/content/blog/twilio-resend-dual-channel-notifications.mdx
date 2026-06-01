@@ -1,0 +1,98 @@
+---
+title: "Dual-Channel Notifications Without Letting SMS Take Down Email"
+date: "Jun 1, 2026"
+---
+
+Email and SMS are both first-class notification channels in Tails &
+Scales — booking confirmations, deposit reminders, 48-hour session
+prep, gallery-ready pings. The hard part isn't sending them. The hard
+part is making sure a flaky Twilio response doesn't tank the email
+send that the customer actually needs.
+
+## Opt-in, on the booking
+
+SMS is gated by a single boolean — `bookings.sms_opt_in`, default
+`false`. The booking wizard surfaces it as one checkbox next to the
+phone field: *"Send me SMS reminders about my booking."* No
+hierarchies, no per-event preferences, no settings page in the
+client portal. The whole feature is one checkbox at intake.
+
+The reason it's that small: every additional preference is a
+support burden. If the client wants to stop SMS, they reply STOP and
+Twilio handles it. If they want to start, the next booking re-asks.
+A settings UI for SMS preferences would have cost more to build than
+the feature it gates.
+
+## The Edge Function pattern
+
+Every notification Edge Function follows the same shape:
+
+```ts
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
+
+  try {
+    const { booking } = await req.json()
+
+    // 1. Email is the source of truth. If this fails, the function fails.
+    const emailRes = await resend.emails.send({ ... })
+    await logNotification({ channel: 'email', status: 'sent', ... })
+
+    // 2. SMS is best-effort. Wrap it in its OWN try/catch.
+    if (booking.sms_opt_in && booking.contact_phone) {
+      try {
+        await twilio.messages.create({ ... })
+        await logNotification({ channel: 'sms', status: 'sent', ... })
+      } catch (smsErr) {
+        await logNotification({ channel: 'sms', status: 'failed', error_message: smsErr.message, ... })
+        // Do NOT rethrow. Email already went out.
+      }
+    }
+
+    return new Response(JSON.stringify({ ok: true }), { headers: cors })
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: cors })
+  }
+})
+```
+
+The nested try/catch is the whole pattern. Email failure → 500,
+client retries. SMS failure → logged, swallowed, ignored. The
+customer gets their booking confirmation either way.
+
+## Why a `notification_log` table
+
+Every send (success or failure, email or SMS) writes a row to
+`notification_log` — booking_id, type, channel, recipient, status,
+error_message, sent_at. This costs almost nothing to maintain and
+pays off the first time a client says "I never got the gallery
+email." Two minutes in the dashboard tells you whether Resend
+accepted it, whether Twilio delivered the SMS, and whether either
+bounced.
+
+It also gives the owner a deliverability dashboard for free — a
+weekly chart of failed sends surfaces deliverability problems
+(verified domain expired, a typo'd phone number convention) long
+before clients start complaining.
+
+## The two secrets that matter
+
+`RESEND_FROM_EMAIL` lives in the secret store, not the code. During
+development, it's a sandbox address. At go-live, it flips to the
+verified domain — one secret update, zero code changes. The Edge
+Functions don't know the difference.
+
+`TWILIO_FROM_NUMBER` works the same way. Same secret-store discipline
+that the rest of the stack uses. The `npm:resend` and `twilio` SDK
+imports happen inside the function, no cross-function shared
+modules, no Deno-side dependency layer to maintain.
+
+## What I'd add next
+
+The pattern that's *not* in the MVP but is worth thinking about: a
+generic `send-notification` Edge Function that takes `{ type,
+booking_id }` and dispatches to the right template. The current
+shape has 12 small functions, one per notification type, which is
+fine until template variants start to multiply. If the count crosses
+20, the consolidation will pay for itself. Until then, twelve
+single-purpose functions read better than one big switch statement.

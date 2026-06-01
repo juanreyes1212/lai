@@ -1,0 +1,71 @@
+---
+title: "Designing a 'Pending Review' Queue Instead of Auto-Confirming Bookings"
+date: "Jun 1, 2026"
+---
+
+The default for online booking systems is auto-confirm: the client
+picks a slot, the slot disappears from the calendar, an email goes
+out, done. It's the right call for a hair salon. It's the wrong call
+for a pet groomer who also does in-home photography sessions with
+travel time, props, and a real human reviewing every request.
+
+So Tails & Scales doesn't auto-confirm anything.
+
+## The status enum
+
+```ts
+type BookingStatus =
+  | 'pending_review'      // just submitted, owner hasn't looked yet
+  | 'confirmed'           // owner approved, no money asked yet
+  | 'deposit_requested'   // payment email sent
+  | 'deposit_paid'        // Stripe webhook fired
+  | 'in_progress'         // day-of, service started
+  | 'completed'           // finished
+  | 'cancelled'           // client backed out
+  | 'declined'            // owner said no
+  | 'no_show'             // client didn't show up
+```
+
+Every new booking lands in `pending_review`. The dashboard shows a
+red dot on the Bookings nav item with the pending count. The owner
+opens the booking, sees the full intake, and clicks **Confirm** or
+**Decline**. Both fire client-side emails (and SMS if the client
+opted in). Confirm chains into the deposit request flow. Decline
+fires a polite email with a "contact us to reschedule" line and an
+optional reason field.
+
+## Why two states for "yes" and "no"
+
+The temptation is to collapse `pending_review` and `confirmed` into a
+single `is_confirmed: boolean`. The reason not to is that "no
+decision yet" is a *meaningful* state for the owner. It drives the
+queue badge, the dashboard sort order, the cron that nags her if
+something has sat unreviewed for 24 hours. A null is a state.
+Modeling it explicitly costs one enum value and saves a dozen
+ambiguous queries.
+
+Same for `declined` vs `cancelled`. Both end the booking, but one is
+the *owner's* decision and one is the *client's*. They drive
+different emails, different metrics, and different post-mortems.
+Collapsing them would lose information that the dashboard reports on
+later.
+
+## The escape hatch
+
+The plan reserves a settings flag — `auto_confirm_per_service_type` —
+that's not built yet. Once the owner is comfortable with the manual
+queue, individual service types (mini photography sessions, basic
+nail trims) can be flipped to auto-confirm without changing any of
+the code that processes the queue. The state machine doesn't change;
+only the *initial* state does. That's the value of explicit states:
+upgrading the policy doesn't ripple.
+
+## What this taught me about MVP defaults
+
+The defaults you ship with shape the operator's relationship to the
+software. Auto-confirm trains the owner to ignore the dashboard
+until something breaks. Manual confirm trains the owner to *open*
+the dashboard every morning, see the queue, and make a small
+decision. That habit is the thing that makes everything else in the
+dashboard get used — the line items, the package changes, the
+internal notes. It's not a feature; it's a workflow primer.
