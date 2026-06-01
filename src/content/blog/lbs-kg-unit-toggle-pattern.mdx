@@ -1,0 +1,87 @@
+---
+title: "lbs/kg, Without Storing Both: A Unit Toggle Pattern That Doesn't Rot"
+date: "May 30, 2026"
+---
+
+FitTrack stores every weight in one unit. Exactly one. The toggle
+between lbs and kg is purely a display concern — and committing to
+that early is the only reason the codebase still makes sense three
+months in.
+
+## The trap I avoided
+
+The naive version is to store `weight_lbs` and `weight_kg` on the
+same row and "keep them in sync." This is a category of bug factory.
+Floating-point conversion isn't symmetric (`90 kg → 198.416 lbs →
+89.999 kg`), and the moment two sources of truth diverge, every chart
+shows the wrong number for half the users.
+
+The other tempting version is "store whatever unit the user typed in,
+with a `unit` column." Now every query that aggregates across users
+has to convert, every chart axis has to branch, and every export is a
+landmine.
+
+## What I did instead
+
+One canonical storage unit — **kilograms, as a `numeric(6,2)`**. Every
+write converts from the user's preferred display unit to kg at the
+form boundary. Every read converts back at the render boundary. The
+database knows about exactly one unit. The UI knows about two.
+
+```ts
+// src/lib/units.ts
+const LBS_PER_KG = 2.20462262
+
+export const toKg = (value: number, unit: 'kg' | 'lbs') =>
+  unit === 'kg' ? value : value / LBS_PER_KG
+
+export const fromKg = (kg: number, unit: 'kg' | 'lbs') =>
+  unit === 'kg' ? kg : kg * LBS_PER_KG
+
+export const formatWeight = (kg: number, unit: 'kg' | 'lbs') =>
+  `${fromKg(kg, unit).toFixed(1)} ${unit}`
+```
+
+Three functions. They live in one file. Every input field, every
+chart label, every CSV export goes through them.
+
+## The user preference
+
+The unit lives on `user_settings.weight_unit` (default `'kg'`). It's
+loaded once on app boot into a `UnitContext` and read with a
+`useWeightUnit()` hook. No prop drilling, no per-component state, no
+re-deriving on every render.
+
+Switching the toggle is a single mutation — it doesn't touch any
+weight data. The next render just re-formats the same kilograms with
+the new unit. That's the whole feature.
+
+## The display rounding rule
+
+Conversions create false precision. `90 kg` is a round number. Its
+lbs equivalent is `198.416…`, which renders as `198.4 lbs` — fine.
+But `200 lbs` → `90.7185 kg` → display `90.7 kg`, and now the user
+who entered 200 sees 90.7 forever. That's correct but ugly.
+
+The rule I settled on: **always round at the display layer, never at
+the storage layer**. Storage keeps full precision. Display rounds to
+one decimal. Inputs accept whatever the user types and convert
+losslessly. Charts use the raw kg for math, formatted strings for
+labels.
+
+## Body measurements come along for the ride
+
+The same pattern applies to chest, waist, hips, arms — stored in
+centimeters, displayed as cm or inches based on a separate
+`length_unit` preference. Two units, two toggles, one principle: the
+database speaks SI, the UI speaks user.
+
+## What I'd warn future me about
+
+The one thing this pattern doesn't help with is *imported* data.
+Health Auto Export gives weights in whatever unit the iPhone is set
+to, and that unit is in the JSON payload. The import endpoint reads
+the unit field, converts to kg on the way in, and discards the unit.
+The unit is metadata, not data. Forgetting that step once silently
+turned 195 lbs into a 195 kg row and triggered the most alarming
+chart in the app's history.

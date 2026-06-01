@@ -1,0 +1,110 @@
+---
+title: "Token-Gated Public Pages Without RLS Gymnastics"
+date: "Jun 1, 2026"
+---
+
+Two pages in Tails & Scales are publicly reachable but contain
+client-specific data: the pre-session questionnaire at
+`/questionnaire/:token` and the photo gallery at `/gallery/:token`.
+Both are shared via emailed links. Neither requires a login. Neither
+should be browsable by URL guessing or by a curious anon role.
+
+The textbook Supabase answer is RLS policies on the underlying
+tables. I tried that first, then deleted it and used SECURITY DEFINER
+functions instead. Here's why.
+
+## What the RLS approach looked like
+
+A policy like "allow SELECT on `photo_galleries` where
+`client_token = current_setting('request.headers')::json->>'x-token'`"
+works in isolation. The problems show up at the joins:
+
+- `gallery_images` is one join away from `photo_galleries`. The
+  policy has to traverse the join.
+- The Edge Function that returns signed URLs needs to query the
+  Storage path, not just the DB row. Storage RLS is a separate
+  policy layer with its own gotchas.
+- `increment_view_count` is an UPDATE, which means a separate UPDATE
+  policy gated on the same token.
+- The token comes from a URL param, not a JWT, so every read has to
+  set a custom header or session variable. Easy to forget, easy to
+  break.
+
+Four moving parts, four places to misconfigure, and a footgun where
+*disabling* RLS on the table for any reason silently opens the gate.
+
+## The pattern I shipped
+
+Tables stay locked. `photo_galleries` and `gallery_images` have RLS
+enabled, owner-only policies, **no anon read policy at all**. The
+public access goes through SECURITY DEFINER functions and Edge
+Functions:
+
+```sql
+CREATE OR REPLACE FUNCTION get_portfolio_images()
+RETURNS TABLE (id uuid, storage_path text, ...) 
+LANGUAGE sql SECURITY DEFINER AS $$
+  SELECT gi.id, gi.storage_path, ...
+  FROM gallery_images gi
+  JOIN photo_galleries pg ON pg.id = gi.gallery_id
+  JOIN photo_sessions ps ON ps.id = pg.photo_session_id
+  WHERE gi.marketing_approved = true
+    AND ps.marketing_consent = true
+  ORDER BY gi.sort_order ASC;
+$$;
+```
+
+For client galleries, the Edge Function `get-gallery-images`:
+
+1. Receives the `client_token` from the URL
+2. Validates it against `photo_galleries.client_token`  with
+   `is_published = true`
+3. Generates signed Storage URLs (1-hour expiry) for each image
+4. Fires `increment_gallery_view(token)` via RPC
+5. Returns the array
+
+The Edge Function runs as the service role. The token is checked
+*inside* the function, not by Postgres. The DB tables stay closed to
+the public.
+
+## Why this is easier to reason about
+
+Three things you can read and verify in five minutes:
+
+1. **No public SELECT on the tables.** Anyone reading the schema
+   knows the only public access is through the named functions.
+2. **The Edge Function is one file.** The token check, the signed
+   URL generation, and the view count increment all live together.
+   No cross-table policy puzzle.
+3. **Signed URLs expire.** Even if a token leaks, the URLs in the
+   response stop working after an hour. Re-visiting the gallery URL
+   re-runs the validation.
+
+The RLS approach scatters the gate across four config surfaces. The
+SECURITY DEFINER + Edge Function approach concentrates it in one.
+
+## The trade-off
+
+SECURITY DEFINER functions are powerful and easy to footgun.
+`SET search_path = public` on every one of them is non-negotiable —
+without it, a malicious schema named `pg_temp` could shadow `public`
+tables. Every function I write that uses SECURITY DEFINER gets a
+checklist:
+
+- `SET search_path = public`
+- `RETURNS` exact column list, never `SETOF table` (which exposes
+  added columns by default)
+- `LANGUAGE sql` over plpgsql when possible (smaller attack surface)
+- No `EXECUTE` of dynamic SQL
+
+That checklist is shorter than the RLS policy I would have written.
+That's the whole argument.
+
+## When RLS still wins
+
+This pattern is for *public token-gated* endpoints. The dashboard,
+the client portal, anything behind a real JWT — RLS is still the
+right tool, because `auth.uid()` is the natural anchor. The mistake
+is reaching for RLS for things that aren't authenticated at all.
+URL tokens aren't sessions. Treat them like API keys: check them in
+code, not in policies.

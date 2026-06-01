@@ -1,0 +1,113 @@
+---
+title: "Streaming a Photo Gallery ZIP in a 512 MB Edge Function"
+date: "Jun 1, 2026"
+---
+
+When the owner publishes a gallery in Tails & Scales, two things have
+to happen: the client gets browsable photos immediately, and a
+download-all ZIP gets generated in the background. The "browsable
+immediately" part is easy — signed URLs. The ZIP is the interesting
+problem, because a pet portrait session can be 100 high-res JPEGs at
+4–8 MB each, and a Deno Edge Function has a 512 MB heap ceiling.
+
+Naively loading 100 images into memory and zipping them blows past
+that ceiling on the first photo-heavy session.
+
+## The streaming approach
+
+The fix is to never hold more than one image in memory at a time.
+`jsr:@zip-js/zip-js` supports a streaming writer — give it a
+WritableStream and it'll append entries one at a time, flushing as it
+goes. The pattern:
+
+```ts
+import { ZipWriter } from 'jsr:@zip-js/zip-js'
+
+const { writable, readable } = new TransformStream()
+const zipWriter = new ZipWriter(writable)
+
+for (const image of images) {
+  const { data } = await supabase.storage
+    .from('gallery-images')
+    .download(image.storage_path)
+  await zipWriter.add(image.filename, data.stream())
+  // The blob is GC-able as soon as this loop iteration ends.
+}
+
+await zipWriter.close()
+const zipBlob = await new Response(readable).blob()
+
+await supabase.storage
+  .from('gallery-zips')
+  .upload(`${sessionId}/gallery.zip`, zipBlob, { contentType: 'application/zip' })
+```
+
+Peak memory: ~1 image at a time during the loop, then the final
+`zipBlob` for the upload. For a 100-image session at 8 MB each, that
+peaks around 800 MB *only* at the final upload — which is why the
+blob is uploaded with a streaming variant in the real
+implementation, not the simplified version above. The point: never
+load the full set into a single array.
+
+## Fire-and-forget with `EdgeRuntime.waitUntil`
+
+The publish action in the dashboard cannot wait 90 seconds for ZIP
+generation to finish. It needs to return immediately so the owner
+can send the gallery link to the client.
+
+```ts
+Deno.serve(async (req) => {
+  const { sessionId } = await req.json()
+
+  EdgeRuntime.waitUntil(generateZip(sessionId))
+
+  return new Response(JSON.stringify({ status: 'generating' }), {
+    headers: { 'Content-Type': 'application/json', ...cors }
+  })
+})
+```
+
+`EdgeRuntime.waitUntil` is the Deno equivalent of a worker
+background task — the function returns its response, but the
+runtime keeps the worker alive until the promise settles. The DB
+gets updated on completion (`zip_generation_status = 'complete'`,
+`download_zip_url = ...`), the UI polls or subscribes for the
+status, and the owner can keep working.
+
+## Status as a state machine on the row
+
+`photo_galleries.zip_generation_status` is a tiny state machine:
+`idle | generating | complete | failed`. The dashboard renders a
+different control for each state:
+
+- `idle` — "Generate ZIP" button
+- `generating` — spinner, disabled "Send Gallery Link" stays
+  *enabled* (the client can browse signed URLs without the ZIP)
+- `complete` — green check, file size, "Regenerate" button if
+  images were added after publish
+- `failed` — destructive alert with a retry button
+
+The key UX call: the "Send Gallery Link" button is enabled the
+*moment publish completes*, not the moment the ZIP is ready. The
+client opens the gallery, sees their photos, and the download
+button is the one that's gated on the ZIP. That decoupling cut the
+perceived publish time from 90 seconds to instant.
+
+## The error path
+
+ZIP generation can fail for boring reasons — a Storage timeout, a
+corrupted source image, an upload retry that exceeds the size
+limit. The `try/catch` in `generateZip` sets
+`zip_generation_status = 'failed'` and writes the error to a column.
+The dashboard surfaces "Regenerate" as the only fix. No automatic
+retries — auto-retry on a 90-second operation is a great way to
+turn one error into ten and burn through Edge Function invocations.
+
+## What I'd reach for if this got bigger
+
+For sessions over ~150 images, the right next step is moving the
+ZIP generation out of Edge Functions entirely and onto a queued
+worker (Supabase Queues, or a separate Cloudflare Worker with R2).
+Edge Functions are great for "respond fast, do a bit of background
+work." They're not great for "compress 1.5 GB of source images."
+The 512 MB ceiling is a forcing function for that conversation.

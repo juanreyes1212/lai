@@ -1,0 +1,83 @@
+---
+title: "A Wellness Journal That Doesn't Stare Back at You Blankly"
+date: "May 30, 2026"
+---
+
+The wellness journal was the feature I was most likely to abandon — both
+as a builder and as a user. A free-text "How are you feeling today?"
+textarea is a great way to write nothing for six weeks straight. So the
+journal in FitTrack is structured first, free-text second, and the
+structure is doing most of the work.
+
+## The shape of an entry
+
+Every daily entry stores six things:
+
+- `mood` — 1–5 scale, emoji-labeled
+- `energy` — 1–5 scale, separate from mood (you can be happy and tired)
+- `sleep_quality` — 1–5, distinct from the hours imported from the
+  wearable
+- `stress` — 1–5
+- `wins` — a short text field, one line, prompt "What went right today?"
+- `notes` — the open textarea, optional
+
+Five sliders take fifteen seconds. The wins field is the one that
+quietly does the heavy lifting — it forces a positive recap even on a
+bad day, and three months in it's the most-read field when I scroll
+backward.
+
+## Why scales beat textareas
+
+The point of a wellness journal isn't journaling — it's *trend data*.
+A five-point mood scale plotted across 90 days tells you something. 90
+paragraphs of "felt okay I guess" tell you nothing you can act on.
+
+The scales also let me overlay the journal on the same chart as HRV,
+sleep duration, and training load. Patterns show up that no single
+metric would: HRV tanks for three days, then mood follows. Sleep
+quality (self-rated) drifts down a week before sleep duration does.
+The journal is the *subjective* signal layered on top of the
+*objective* wearable data, and they only become useful together.
+
+## The streak that isn't a streak
+
+There's no streak counter. I tried one for a week and removed it. The
+moment you gamify journaling, the entries get shorter and more
+dishonest — people log a 3/3/3/3 just to keep the flame icon alive.
+
+Instead the dashboard shows "27 of the last 30 days logged" as a quiet
+stat, and missing a day costs nothing. The goal is honest data, not a
+high score.
+
+## Prompts that rotate
+
+The textarea has a placeholder that rotates daily from a list of about
+twenty prompts:
+
+- "One thing you're carrying that you could put down."
+- "What did your body ask for today that you ignored?"
+- "Something a past version of you would be proud of."
+- "What's one thing you want to remember about today?"
+
+A blank textarea is intimidating. A textarea with a specific question
+in light gray text is a conversation starter. The user can ignore it
+and write whatever — but most days, they don't.
+
+## What the AI does with it
+
+The same OpenAI layer that adjusts macros also reads the last 7 days
+of journal entries when generating the morning recommendation. Low
+mood + low HRV + bad sleep quality for three days running flips the
+recommendation tone from "push harder on protein" to "today is a
+recovery day — eat to maintenance, get to bed early." That's the
+payoff for collecting the subjective data. It's not a diary; it's an
+input.
+
+## Privacy
+
+The journal entries never leave the database unless the AI call is
+made, and even then only the last 7 rows go in the prompt — no
+historical lookback, no training data export, no third-party
+analytics. The whole point of a private fitness tracker is that the
+sensitive stuff *stays* private. Journaling is the most sensitive
+field, so it gets the strictest scope.
