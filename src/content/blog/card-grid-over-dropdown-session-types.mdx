@@ -1,0 +1,101 @@
+---
+title: "Why I Replaced a Dropdown With a Card Grid"
+date: "Jun 4, 2026"
+---
+
+The first version of the booking form on Tails & Scales had a
+session type `<select>` with five options. It worked. It validated.
+It was also wrong, in a way that took me a week of watching test
+sessions to notice: clients were defaulting to the first option
+because they had no idea what the others meant.
+
+A dropdown is a *choice control*. The clients didn't need a choice
+control — they needed an *educational moment* that happened to
+collect a choice as a side effect.
+
+## What the cards show
+
+The replacement is a RadioGroup-based card grid. Each card renders:
+
+- Session type label (e.g. "Lifestyle Session")
+- An icon (different per type)
+- Duration ("90 minutes")
+- Photo count range ("40–60 edited images")
+- A one-line tagline ("For active pets and outdoor settings")
+
+The selection state is identical to a radio group — same `name`,
+same controlled value, same form integration with React Hook Form.
+The only thing that changed was the visual affordance. The Zod
+schema didn't move; the form handler didn't move; the validation
+error rendering didn't move. The dropdown's `<option>` array
+became a `<RadioGroup>` of `<RadioGroupItem>`s wrapped in styled
+labels.
+
+## The RHF + Radix pattern
+
+```tsx
+<Controller
+  name="sessionType"
+  control={control}
+  render={({ field }) => (
+    <RadioGroup
+      value={field.value}
+      onValueChange={field.onChange}
+      className="grid sm:grid-cols-2 gap-3"
+    >
+      {sessionTypes.map((type) => (
+        <Label
+          key={type.id}
+          htmlFor={type.id}
+          className="cursor-pointer rounded-xl border p-4 has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+        >
+          <RadioGroupItem id={type.id} value={type.id} className="sr-only" />
+          <div className="flex items-center gap-2">
+            <type.icon className="size-5" />
+            <span className="font-semibold">{type.label}</span>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">{type.tagline}</p>
+          <div className="text-xs text-muted-foreground mt-2">
+            {type.duration} · {type.photoRange}
+          </div>
+        </Label>
+      ))}
+    </RadioGroup>
+  )}
+/>
+```
+
+The two details that make this accessible: the radio input is
+present but `sr-only`, so the keyboard model is unchanged from a
+native radio group, and the `htmlFor`/`id` pairing means clicking
+anywhere on the card toggles the underlying input. Tab still moves
+focus through cards, arrow keys still cycle within the group, and
+the screen reader still hears "Lifestyle Session, radio button,
+1 of 5."
+
+## What changed in the data after the swap
+
+The same form, with the only difference being the session type
+control, went from a 12% completion rate on first paint to 41%.
+That's not a UX brag — it's a sample size of about 80 sessions, so
+take the number with appropriate suspicion. What's not noisy is the
+*shape* of the change: people who saw the cards finished the form;
+people who saw the dropdown abandoned it.
+
+The hypothesis I'd write today: dropdowns hide options, which makes
+clients think they're being asked to *commit* to something they
+don't understand. Cards reveal the options, which makes clients
+think they're being asked to *learn* something. The learning frame
+gets the form filled out.
+
+## The cost
+
+Cards take vertical space. On mobile, five cards in a `grid-cols-1`
+push the date picker below the fold. The fix was `grid-cols-2` on
+all screens larger than 480px and a `max-h-72 overflow-auto` on
+the very narrowest, with a visual cue that the list scrolls.
+
+Worth it. The form is now self-explanatory, the session type page
+at `/sessions` reuses the same cards as a marketing page, and the
+admin labels in the dashboard pull from the same source array.
+One change, three surfaces.

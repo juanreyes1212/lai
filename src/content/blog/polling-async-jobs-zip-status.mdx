@@ -1,0 +1,108 @@
+---
+title: "Polling Edge Function Jobs: The Three-Second Loop That Doesn't Leak"
+date: "Jun 4, 2026"
+---
+
+When Diego clicks "Generate ZIP" on a published gallery, the Edge
+Function returns immediately and the actual zipping happens in the
+background via `EdgeRuntime.waitUntil`. The UI needs to know when
+the job finishes. WebSockets would work; Supabase Realtime would
+work; both are overkill for a button that gets clicked once per
+gallery. The right answer is a three-second polling loop with a
+clean cancel path.
+
+## The loop
+
+```ts
+useEffect(() => {
+  if (status !== 'generating') return
+
+  const interval = setInterval(async () => {
+    const { data } = await supabase
+      .from('photo_galleries')
+      .select('zip_generation_status, download_zip_url')
+      .eq('id', galleryId)
+      .single()
+
+    if (data?.zip_generation_status === 'complete') {
+      setStatus('complete')
+      setDownloadUrl(data.download_zip_url)
+    } else if (data?.zip_generation_status === 'failed') {
+      setStatus('failed')
+    }
+  }, 3000)
+
+  return () => clearInterval(interval)
+}, [galleryId, status])
+```
+
+The cleanup return is the line that matters. If the user navigates
+away mid-generation, the effect tears down and the interval is
+cleared. Without it, the polling continues in the background, racks
+up unnecessary reads, and worse — fires a `setStatus` on an
+unmounted component, which used to be a React warning and is now a
+silent memory leak.
+
+## Why the effect depends on `status`
+
+The cheap way to write this would be a single `setInterval` that
+runs forever and short-circuits when `status !== 'generating'`. The
+cleaner way is to make `status` part of the effect's dependency
+array, so the interval only *exists* when we care about it.
+
+The difference shows up at scale (and on phone batteries). A
+dashboard with 30 galleries on screen could otherwise be running 30
+intervals at 3-second cadence forever, even though only one is
+ever generating at a time. The dependency-gated version runs zero
+intervals at rest and one while a job is active.
+
+## Three seconds, not one
+
+A common instinct is to poll fast — every 500 ms — because it
+feels more "real-time." Three seconds is the sweet spot for this
+job because:
+
+- The ZIP takes 30–90 seconds on a typical gallery. Polling at
+  3 seconds means the worst-case "finished but not displayed" window
+  is 3 seconds, which is below the UI's animation duration anyway.
+- Supabase pricing meters read requests. A 90-second job at 1-second
+  polling is 90 reads. At 3 seconds, it's 30. A small thing, but
+  it adds up across users.
+- A 3-second tick lets the spinner animation breathe. Faster polling
+  with state updates makes the loading state visually jittery.
+
+## Server-side state, not client-side timer
+
+The thing that makes this resilient: the source of truth is a
+column on the row, not a timer in the React app. If Diego refreshes
+mid-job, the new mount reads `zip_generation_status = 'generating'`,
+sets local state to match, and starts polling. If the job already
+finished while he was away, the first poll returns 'complete' and
+the URL is rendered immediately. No reconciliation logic, no "did
+we miss it?" edge case. The DB is the clock.
+
+## What `failed` actually shows
+
+The error path renders a Sonner toast plus an inline destructive
+state on the gallery card. The retry control re-triggers the same
+Edge Function with the same gallery id; the Edge Function
+overwrites the previous status. There's no max-retry counter
+because the only failure modes I've seen (transient Storage 5xx,
+function timeout near 90 seconds) are operator-recoverable. If a
+pattern of repeated failures showed up in the `notification_log`,
+I'd add a cap. Right now it's YAGNI.
+
+## The reusable shape
+
+I've now written this same pattern three times across different
+projects, and the shape is always:
+
+1. An effect gated on a "should we poll" state
+2. A bounded-cadence `setInterval` doing a single column read
+3. A cleanup returning `clearInterval`
+4. A DB column as the source of truth, not React state
+
+If you find yourself writing it a fourth time, that's the moment
+to extract a `usePollUntil(predicate, source, interval)` hook. Not
+before — premature abstractions on polling hide the dependency
+list, which is the bit that actually matters.

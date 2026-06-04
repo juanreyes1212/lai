@@ -1,0 +1,95 @@
+---
+title: "Smart Placeholder Injection for a Portfolio That Isn't Full Yet"
+date: "Jun 4, 2026"
+---
+
+A photographer's marketing site has a chicken-and-egg problem: the
+portfolio gallery is the conversion engine, but a brand-new business
+account doesn't have enough images to fill it. An empty masonry grid
+or a four-image page reads as "this person isn't busy enough to
+hire." The fix on Tails & Scales is an injection algorithm that
+quietly tops up the public gallery with curated samples until the
+real portfolio reaches a threshold.
+
+## The rules
+
+`placeholder-images.ts` exports a function `withPlaceholders(real,
+sessionType)` that returns the array the gallery should render. The
+rules are tuned to two thresholds:
+
+- **At least 3 real images per session type.** Below that, the
+  category filter feels broken because clicking "Studio" returns
+  one photo.
+- **At least 12 total images on the unfiltered grid.** Below that,
+  the masonry layout has visible holes on a 1440px viewport.
+
+If a category falls below 3 real, the algorithm pads it with that
+category's placeholders. If the total is below 12, it pads with a
+balanced mix across categories. Anything above the thresholds, the
+algorithm returns the real images untouched.
+
+## The injection function in shape
+
+```ts
+export function withPlaceholders(real: Image[], sessionType?: string): Image[] {
+  const filtered = sessionType
+    ? real.filter((i) => i.sessionType === sessionType)
+    : real
+
+  if (sessionType) {
+    const deficit = Math.max(0, MIN_PER_TYPE - filtered.length)
+    return [...filtered, ...samplesFor(sessionType, deficit)]
+  }
+
+  const deficit = Math.max(0, MIN_TOTAL - filtered.length)
+  return [...filtered, ...balancedSamples(real, deficit)]
+}
+```
+
+Placeholders carry an `isPlaceholder: true` tag. Two things consume
+that tag:
+
+1. The marketing gallery shows them indistinguishably from real
+   work — they ARE real photographs, just curated stock that fits
+   the brand.
+2. The client-facing token gallery (`/gallery/:token`) **filters them
+   out entirely**. A paying client must never see a placeholder
+   image masquerading as their session deliverable.
+
+That second rule is enforced one layer up: the Edge Function that
+returns gallery URLs joins on `is_placeholder = false`. The
+frontend doesn't get the choice.
+
+## Why this beats "hide the gallery until full"
+
+The first version of the marketing page had a `min-images` check
+that hid the gallery entirely if there weren't enough real images.
+The page felt amputated. Visitors hit a CTA-then-nothing layout and
+bounced.
+
+The injection version keeps the page rich on day one. As Diego
+shoots and uploads, placeholders are replaced one-for-one with real
+work. The visual density of the page never changes. Six months in,
+the algorithm returns zero placeholders for every category because
+the thresholds are exceeded — and the code that supported the
+launch never has to be touched or deleted.
+
+## A side benefit: testing the layout
+
+Because the placeholder pool covers every session type with the
+right aspect ratio mix, the layout has been "fully populated" from
+the first commit. I caught a masonry bug (orphaned column on
+exactly 7 images) in week one that would otherwise have shown up
+the day Diego uploaded his seventh real shoot. The placeholders
+are also a regression suite for the gallery component, in addition
+to being a launch crutch.
+
+## The one trap
+
+Don't credit placeholders in alt text as the photographer's work.
+`alt` on a placeholder is the generic category — "Studio portrait
+of a Border Collie" — not "by Diego." If a search engine indexes
+the image and someone clicks through, they'll get the photographer
+context from the page, not the image metadata. That keeps the
+portfolio honest without forcing the launch to wait for a full
+shoot calendar.

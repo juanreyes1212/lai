@@ -1,0 +1,99 @@
+---
+title: "From Inquiry to Delivery: Modeling a One-Person Photography Business"
+date: "Jun 4, 2026"
+---
+
+Tails & Scales Portraits is a solo operation. Diego shoots, edits,
+emails, invoices, and answers DMs at midnight. The app I built for
+him is not a generic CRM with a photography skin — it's a literal
+state machine for one person's working day. The data model started
+with a single question: what is the lifecycle of one booking, end
+to end?
+
+## The five stages
+
+Every booking moves through the same five stages, and every table
+in the schema exists to support one of them:
+
+1. **Inquiry** — a stranger fills out `/book`. Writes to
+   `booking_inquiries`. No account, no session yet.
+2. **Triage** — Diego reads the inquiry in the dashboard, asks
+   follow-up questions over email if needed, and decides yes or no.
+3. **Conversion** — the inquiry becomes a row in `photo_sessions`
+   with a confirmed date, deposit status, and session type.
+4. **Delivery** — after the shoot, Diego uploads edits into a
+   `photo_galleries` row, which holds many `gallery_images`.
+5. **Handoff** — the gallery gets a publish toggle. When published,
+   the 32-byte token URL is emailed to the client.
+
+The thing I want to highlight is that **inquiry and session are
+separate tables**. A demo app would write straight into
+`photo_sessions` from the public form. A real business needs the
+seam, because most inquiries don't become sessions — they get
+declined, ghosted, or rescheduled into a different date format.
+Mixing them pollutes the sessions table with garbage and breaks
+every "how many shoots this month" query.
+
+## Why the seam is worth one extra table
+
+The conversion step is the closest thing this app has to a sales
+funnel. By keeping inquiries separate, the dashboard can show:
+
+- Inbox-zero behavior — every inquiry is either accepted, declined,
+  or archived, and the badge in the nav reflects the unread count
+- Conversion rate over time — `count(sessions) / count(inquiries)`
+  bucketed by month
+- Lead source attribution — the inquiry form has a "how did you
+  hear about us" field that survives conversion as a session column
+
+If inquiries and sessions were one table with a status enum, those
+three queries would all need a `WHERE status = 'inquiry'` clause
+that's easy to forget. The seam pushes the distinction into the
+schema where it can't be ignored.
+
+## The 14-day lead time, and the VIP bypass
+
+The booking form refuses dates within 14 days of today. That's not
+a UX preference — it's the time Diego needs to coordinate location
+permits and pet-friendly props. But the *admin* can override it with
+an `expedited` flag on the session, which charges an express fee
+stored as `express_fee_cents` (integer, never float). The dashboard
+shows a "short-notice" badge on any session inside the 14-day
+window so Diego doesn't accidentally forget the express logistics.
+
+Two lessons from that pair of features:
+
+- **Public forms enforce defaults; admin tools allow overrides.**
+  The frontend validation isn't security, it's a friction gradient.
+- **Money is integer cents.** A `numeric` column would work in
+  Postgres, but the JS round-trip through `parseFloat` is where
+  fractions of a cent show up in invoices. Cents in, cents out, no
+  exceptions.
+
+## The full data flow on one page
+
+```text
+public form           dashboard           client gallery
+-----------           ---------           --------------
+booking_inquiries  →  photo_sessions  →  photo_galleries
+                                            ↓
+                                         gallery_images
+                                            ↓
+                                         token URL → client
+```
+
+That diagram is the whole app. Every page, every Edge Function,
+every RLS policy maps to one arrow. When a feature request comes
+in — "can clients request prints?" — I draw it on the diagram first
+and see which arrow it lives on. If it doesn't fit any arrow, it
+probably belongs in a different app.
+
+## What I'd tell anyone building for a single operator
+
+Resist the urge to model "users" as a plural. Diego is the user.
+The schema can encode that — `photo_sessions.photographer_id` is
+technically a foreign key to `auth.users`, but it has a UNIQUE
+constraint enforced at the application layer and the RLS policy is
+literally `auth.uid() = photographer_id`. The day Diego hires a
+second shooter, that's a migration. Today, it's a constraint that
+keeps the dashboard simple.

@@ -1,0 +1,118 @@
+---
+title: "One Array, Five Surfaces: Session Types as a Single Source of Truth"
+date: "Jun 4, 2026"
+---
+
+Tails & Scales has five session types — Studio, Lifestyle, Event,
+Family, Commercial. Each one needs: a label, an icon, a duration, a
+photo count range, a one-line tagline, a longer description, an
+"ideal for" bullet list, a placeholder image, and a stable id used
+as a database enum. That's nine attributes across five rows, and
+they're consumed by at least five places in the app. The temptation
+is to scatter them — to put the marketing copy in the
+`/sessions` page and the database labels in the dashboard. I did
+that first. It broke within a week.
+
+The replacement is `session-types.ts`, a single 90-line file that
+exports one array. Everything reads from it.
+
+## What the file looks like
+
+```ts
+import { Camera, Sparkles, Users, PawPrint, Briefcase } from 'lucide-react'
+
+export type SessionTypeId = 'studio' | 'lifestyle' | 'event' | 'family' | 'commercial'
+
+export interface SessionType {
+  id: SessionTypeId
+  label: string
+  icon: LucideIcon
+  duration: string
+  photoRange: string
+  tagline: string
+  description: string
+  idealFor: string[]
+  placeholderImage: string
+}
+
+export const sessionTypes: SessionType[] = [
+  {
+    id: 'studio',
+    label: 'Studio Session',
+    icon: Camera,
+    duration: '60 minutes',
+    photoRange: '20–30 edited images',
+    tagline: 'Controlled lighting, classic portrait look',
+    description: '...',
+    idealFor: ['Calm pets', 'Headshots and prints', 'All weather'],
+    placeholderImage: '/placeholders/studio.jpg',
+  },
+  // ...four more
+]
+
+export const sessionTypeMap: Record<SessionTypeId, SessionType> =
+  Object.fromEntries(sessionTypes.map((t) => [t.id, t])) as never
+```
+
+The `sessionTypeMap` is a derived O(1) lookup for places that have
+an id and need the metadata. The array is for places that iterate.
+
+## The five surfaces
+
+1. **The `/book` form's RadioGroup cards** map over the array and
+   render id, label, icon, duration, photoRange, tagline.
+2. **The `/sessions` marketing page** maps over the array and
+   renders label, description, idealFor, photoRange — a more
+   detailed view of the same data.
+3. **The dashboard inquiry table** uses `sessionTypeMap[id].label`
+   to display the human name next to each inquiry row.
+4. **The placeholder injector** uses `placeholderImage` to fill
+   the public gallery (covered in the
+   [placeholder injection post](/blog/smart-placeholder-injection-sparse-portfolio)).
+5. **The Zod schema** in `bookingSchema` derives its enum from the
+   ids: `z.enum(sessionTypes.map((t) => t.id) as [SessionTypeId, ...SessionTypeId[]])`.
+
+That's it. Adding a sixth session type ("Boarding Visit Mini") is a
+single object append to the array. Every surface picks it up on
+next render. The booking form gets a new card; the marketing page
+gets a new section; the dashboard knows the label; the Zod enum
+accepts the new id without a code change. No migration, no
+duplicate copy, no out-of-sync icons.
+
+## What this caught the first week
+
+Diego rephrased "Lifestyle Session" as "Outdoor Session" because
+his clients kept asking what "lifestyle" meant. Before consolidation,
+that rename would have been six edits across three files plus an
+enum migration. After consolidation, it was one line in
+`session-types.ts`. The marketing page, the form, the dashboard,
+and the inquiry receipts all updated in the same deploy.
+
+That kind of one-line copy change is where single-source-of-truth
+arrays earn their keep. The technical refactor doesn't pay for
+itself; the *next ten copy iterations* do.
+
+## The trap of putting too much in here
+
+The temptation after a few weeks was to add SEO metadata, a
+sample-gallery URL, a per-type price, and a Stripe product id to
+the same array. I drew the line at things that change frequency
+mismatched with the rest. Prices change quarterly with tax law;
+session metadata changes once a year. Stripe IDs are environment-
+scoped (test vs prod). Putting them in the same file would have
+broken the "copy edit = one line" property by forcing redeploys for
+unrelated changes.
+
+The rule I landed on: a file is a single source of truth for things
+that *change together*. The moment two attributes have different
+ownership or release cadences, they belong in separate files even
+if they're conceptually related.
+
+## The shape transfers
+
+This pattern works for any small, finite, cross-surface
+enumeration: subscription tiers, blog categories, project statuses,
+case study types. The session types array is just the most explicit
+version I've shipped. Whenever you find yourself writing a label
+in JSX that you've already written in a different file, that's the
+signal to extract one of these.
