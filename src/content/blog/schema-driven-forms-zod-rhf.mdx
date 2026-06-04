@@ -1,0 +1,122 @@
+---
+title: "One Zod Schema, Three Surfaces: The Booking Form Pattern"
+date: "Jun 4, 2026"
+---
+
+The booking form on Tails & Scales is the highest-stakes piece of
+frontend code in the app. It's the *only* place a stranger writes
+to the database, it's the conversion path the entire portfolio
+points at, and it has the kind of edge cases (date math, conditional
+fields, optional file uploads) that bloat into a 500-line component
+if you let them. The thing that kept it under 200 lines is treating
+the Zod schema as the single source of truth for shape, validation,
+and types.
+
+## The schema is the spec
+
+```ts
+const bookingSchema = z.object({
+  clientName: z.string().min(2, 'Name is required'),
+  email: z.string().email('Valid email required'),
+  phone: z.string().regex(/^[\d\s\-+()]+$/).optional(),
+  petName: z.string().min(1),
+  sessionType: z.enum(['studio', 'lifestyle', 'event', 'family', 'commercial']),
+  preferredDate: z.date().refine(
+    (d) => differenceInDays(d, new Date()) >= 14,
+    'Please pick a date at least 14 days out'
+  ),
+  message: z.string().max(1000).optional(),
+  marketingConsent: z.boolean().default(false),
+})
+
+type BookingInput = z.infer<typeof bookingSchema>
+```
+
+That schema is the contract. Three things derive from it without
+duplication:
+
+1. **The TypeScript type** for the form values, props, and the API
+   payload — via `z.infer`.
+2. **The client validation** — via `zodResolver(bookingSchema)`
+   handed to React Hook Form.
+3. **The server validation** in the Edge Function that handles the
+   POST — the same schema imported from a shared package.
+
+Every field error string is written exactly once. Every type
+narrowing happens automatically. There is no DTO mapping layer
+because the input and the row insert are the same shape.
+
+## How RHF + Controller handles the weird fields
+
+The simple fields (`clientName`, `email`) are plain `register()`
+calls. The interesting ones go through `<Controller>` because
+they're driven by Radix primitives that need controlled values:
+
+- `sessionType` — RadioGroup card grid (covered in
+  [its own post](/blog/card-grid-over-dropdown-session-types))
+- `preferredDate` — Calendar popover with the 14-day rule
+- `marketingConsent` — Checkbox
+
+```tsx
+<Controller
+  name="preferredDate"
+  control={control}
+  render={({ field, fieldState }) => (
+    <DatePicker
+      value={field.value}
+      onChange={field.onChange}
+      disabled={(d) => differenceInDays(d, new Date()) < 14}
+      error={fieldState.error?.message}
+    />
+  )}
+/>
+```
+
+The `disabled` prop on the picker and the `refine` rule on the
+schema both enforce the same 14-day minimum. The schema is the
+source of truth — the picker is a friendly UI hint. If a user
+finds a way to submit a date inside the window (devtools, a stale
+form), the Zod check on the Edge Function bounces it.
+
+## Inferring the API payload from the form
+
+Because the server uses the same schema, the Edge Function looks
+like this:
+
+```ts
+Deno.serve(async (req) => {
+  const body = await req.json()
+  const result = bookingSchema.safeParse(body)
+  if (!result.success) {
+    return new Response(JSON.stringify({ errors: result.error.flatten() }), {
+      status: 400, headers: { 'content-type': 'application/json' },
+    })
+  }
+  await supabase.from('booking_inquiries').insert(result.data)
+  // ...notification side effects
+})
+```
+
+No DTO, no `transform`, no manual `interface BookingInsert {...}`.
+The shape that the form produces is the shape the table accepts.
+When a field gets added, the chain updates in one direction: schema
+→ type → form field → server insert. There's no version drift
+because there's nothing to drift from.
+
+## What I'd warn against
+
+Don't reach for Zod's `transform` to coerce the form values into a
+DB shape. That makes the inferred type diverge from the form values
+type and you end up needing `z.input` vs `z.output` everywhere.
+Keep the schema flat and let any DB-specific massaging happen in
+the Edge Function as an explicit step. Schemas are easier to read
+when they don't double as ETL pipelines.
+
+## The payoff line
+
+Two new requirements landed during MVP — a "how did you hear about
+us" select and an optional reference-photo upload. Both were
+one-line schema additions, one form field, one Edge Function
+re-deploy. No types broke, no validation drifted between client and
+server, no place to forget. That's the dividend on getting the
+shape right once.

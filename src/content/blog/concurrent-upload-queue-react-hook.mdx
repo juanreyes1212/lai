@@ -1,0 +1,121 @@
+---
+title: "A Concurrent Upload Queue in 120 Lines of React"
+date: "Jun 4, 2026"
+---
+
+When Diego drops 60 edited photos onto the dashboard, three things
+have to happen for each file: compress, upload to Storage, insert a
+`gallery_images` row. Doing them sequentially takes ten minutes
+because every step is mostly waiting on I/O. Doing them all in
+parallel slams Storage with 60 concurrent PUTs, blows past the
+free-tier connection limit, and the browser starts dropping requests.
+The middle path is a queue with a bounded concurrency of three.
+
+## What the hook exposes
+
+`useUploadQueue` is a single hook that wraps a `useReducer` and a
+scheduler effect:
+
+```ts
+const { items, addFiles, retry, remove } = useUploadQueue(galleryId)
+```
+
+Each `item` has a stable id, the source `File`, a `status`
+('queued' | 'compressing' | 'uploading' | 'saving' | 'done' |
+'error'), a `progress` number, and an optional `error` string. The
+UI renders one row per item with the right control set for the
+status — a spinner during work, a retry button on error, a remove
+button at any pre-done state.
+
+## The scheduler
+
+The scheduler is an effect that runs whenever `items` changes. It
+counts active items, finds queued items, and starts new ones until
+the active count hits the cap.
+
+```ts
+useEffect(() => {
+  const active = items.filter((i) =>
+    ['compressing', 'uploading', 'saving'].includes(i.status)
+  ).length
+  const slots = MAX_CONCURRENT - active
+  if (slots <= 0) return
+
+  const queued = items.filter((i) => i.status === 'queued').slice(0, slots)
+  queued.forEach((item) => {
+    dispatch({ type: 'start', id: item.id })
+    void processItem(item).catch((err) =>
+      dispatch({ type: 'error', id: item.id, error: err.message })
+    )
+  })
+}, [items])
+```
+
+`MAX_CONCURRENT = 3` is a tuned number — anything higher started
+returning 429s from Storage in my testing. Three is the number
+where a 60-image upload finishes in about 90 seconds without any
+retries triggering.
+
+## State transitions per item
+
+```text
+queued
+  └─ compressing (browser-image-compression in a worker)
+      └─ uploading (PUT to storage, XHR for progress)
+          └─ saving (insert gallery_images row with width/height/blur)
+              └─ done
+
+  any → error (retryable)
+```
+
+The interesting transition is between `uploading` and `saving`. The
+Storage PUT and the DB insert are two separate network round-trips,
+and there's a window where the file exists in Storage but doesn't
+have a DB row. If the user closes the tab in that window, the file
+is orphaned. The cleanup story is a nightly Edge Function that
+deletes Storage objects with no matching row older than 24 hours —
+not glamorous, but it's the only way to keep two systems honest
+without a distributed transaction.
+
+## Per-item progress without prop drilling
+
+The `uploading` step uses an XMLHttpRequest (not fetch) because
+fetch doesn't expose upload progress on the browsers Diego's
+clients use. The XHR's `progress` event dispatches an action with
+the new percent, the reducer updates that one item, and React
+re-renders only the row that changed because each row is keyed by
+the stable id and memoized.
+
+```ts
+xhr.upload.onprogress = (e) => {
+  if (e.lengthComputable) {
+    dispatch({ type: 'progress', id: item.id, progress: e.loaded / e.total })
+  }
+}
+```
+
+Sixty progress events per second across three parallel uploads is
+~180 dispatches/sec. With `React.memo` on the row and a stable
+key, this stays under 4ms of render work per frame, which is
+nowhere near the 16ms budget. No throttling needed.
+
+## Retry, remove, and the small details
+
+- **Retry** resets `status` to `queued` and clears `error`. The
+  scheduler picks it up on the next render.
+- **Remove** dispatches a delete. If the item was already uploaded
+  to Storage but not yet saved as a row, the dispatch *also* fires
+  a `storage.remove` for the path so the orphan-cleanup job has
+  less to do.
+- **Pause** isn't a feature. Three-at-a-time on a residential
+  upload is slow enough that pausing the rest doesn't help anyone.
+  YAGNI'd it.
+
+## The lesson
+
+Custom queueing in React is mostly a reducer plus an effect plus
+the discipline to keep the state machine small. The hook is 120
+lines including the types. The whole problem disappears if you
+realize that "concurrent" doesn't mean "all at once" — it means
+"more than one, with a cap." Once that's true, the rest is just
+careful bookkeeping.
