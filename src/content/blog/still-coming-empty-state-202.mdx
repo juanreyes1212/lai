@@ -1,0 +1,71 @@
+---
+title: "The 'Still Coming' State: Replacing a 403 With a Promise"
+date: "Jun 5, 2026"
+---
+
+A client books a session on Saturday. Photos get edited Monday through
+Wednesday. The "your gallery is ready" email goes out Thursday. But
+some clients — the excited ones, the ones you actually want — visit
+their gallery URL on Sunday morning, hoping.
+
+What they used to get: a generic error page from the edge function
+returning 403, because the gallery row existed but `published_at` was
+null. To the client this reads as *broken* or *scammed*. Neither is
+true. The right answer is "your photos are on their way."
+
+## Status code first, copy second
+
+The edge function used to early-return:
+
+```ts
+if (!gallery.published_at) {
+  return new Response('forbidden', { status: 403 });
+}
+```
+
+That conflates *not allowed* with *not ready yet*. The new shape:
+
+```ts
+if (!gallery.published_at) {
+  return new Response(
+    JSON.stringify({
+      state: 'pending',
+      client_name: session.client_name,
+      pet_name: session.pet_name,
+      session_date: session.session_date,
+      estimated_ready_by: session.estimated_ready_by,
+    }),
+    { status: 202, headers: jsonHeaders }
+  );
+}
+```
+
+**202 Accepted** is the honest code: the request is valid, the work
+is in progress. The client page branches on it explicitly rather than
+falling through to the catch-all error renderer.
+
+## What the page actually says
+
+Generic "coming soon" copy is worse than a 403. The page now reads:
+
+> Hi Sarah — Rex's photos from June 1 are still being edited. Your
+> gallery will be ready by **June 8**. We'll email you the moment
+> it's live.
+
+Name, pet name, date, ETA. The name and pet name come from the
+session row the RPC already had to load to validate the token, so
+there's no extra query. The ETA is a column the owner sets at session
+creation — defaulting to seven days from the shoot — so I never have
+to compute or guess it.
+
+## Why I didn't add polling
+
+Tempting: poll every 30 seconds, swap in the gallery the moment
+`published_at` flips. I left it out. The path from "pending" to
+"published" is hours-to-days, not seconds. A polling loop would burn
+RPCs to no perceivable benefit, and the email goes out the instant the
+owner publishes anyway. The client gets the link they expected, in the
+channel they expected.
+
+The bug wasn't missing functionality. It was the wrong status code
+telling the wrong story.

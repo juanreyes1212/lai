@@ -1,0 +1,61 @@
+---
+title: "Adding an Expiry to Token-Gated Galleries Without Breaking Old Links"
+date: "Jun 5, 2026"
+---
+
+The original token-gated gallery in Tails & Scales had one job: hand
+the client a long opaque URL and let them in. It worked, but it had a
+quiet liability — that token never expired. A client who bookmarked a
+gallery in 2026 could still pull full-resolution originals in 2030,
+long after the storage bill stopped making sense.
+
+The fix is a single nullable column and one boolean check, but the
+interesting part is keeping it forward-compatible.
+
+## The schema change
+
+```sql
+alter table public.photo_galleries
+  add column expires_at timestamptz null;
+```
+
+Nullable on purpose. Existing galleries keep working with no migration
+backfill — `null` means "never expires," which preserves the old
+contract for every link already in inboxes.
+
+## The check belongs in the RPC, not the policy
+
+The temptation is to bake expiry into an RLS policy. I pushed it into
+the existing `SECURITY DEFINER` RPC that already validates the token:
+
+```sql
+if gallery.expires_at is not null
+   and gallery.expires_at < now() then
+  raise exception 'gallery_expired' using errcode = 'P0001';
+end if;
+```
+
+The edge function maps that error to **HTTP 410 Gone** — not 404. The
+distinction matters. 404 says "we don't know what you mean"; 410 says
+"this existed and is intentionally gone," which is what the client
+page needs to render the right message.
+
+## UI affordances over date pickers
+
+The owner panel has two quick buttons — **30 days** and **60 days** —
+plus a **Remove expiry** action when one is set. No date picker. A
+solo photographer setting expiries between editing sessions doesn't
+want to think about timezones; they want "give them two months."
+
+The buttons compute `now() + interval` server-side so client clock
+skew is irrelevant.
+
+## What I didn't add
+
+No automatic deletion of expired storage objects. Expiry gates
+*access*, not *existence*. If a client emails six months later
+panicking about a lost wedding-of-the-dog gallery, the photos are
+still there and the expiry is a one-click reset, not a restore from
+backup.
+
+Cheap, reversible, and the old links keep working.
