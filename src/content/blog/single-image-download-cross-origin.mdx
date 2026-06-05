@@ -1,0 +1,67 @@
+---
+title: "Why the Download Attribute Isn't Enough for Cross-Origin Images"
+date: "Jun 5, 2026"
+---
+
+Tails & Scales already had a "download the whole gallery" button that
+streams a ZIP from an edge function. What it didn't have was the
+obvious smaller feature: download *this one* photo. Clients kept
+right-clicking and saving the JPEG preview — a downscaled image — and
+then asking why their print came back blurry.
+
+Adding a single-image download looks like a one-liner:
+
+```tsx
+<a href={signedUrl} download={filename}>Download</a>
+```
+
+It is not.
+
+## The cross-origin trap
+
+The `download` attribute is a hint, not a guarantee. When the resource
+lives on a different origin — and signed Supabase Storage URLs always
+do — browsers ignore the attribute entirely and navigate to the file
+instead. The user lands on a tab showing the image with the wrong
+filename in the URL bar. Worse on iOS Safari, which opens the image
+inline with no save affordance at all.
+
+The fix is to fetch the bytes, wrap them in a blob, and trigger the
+download from a same-origin object URL:
+
+```ts
+const res = await fetch(signedUrl);
+const blob = await res.blob();
+const objectUrl = URL.createObjectURL(blob);
+
+const a = document.createElement('a');
+a.href = objectUrl;
+a.download = filename;        // now honored — same-origin blob
+document.body.appendChild(a);
+a.click();
+a.remove();
+URL.revokeObjectURL(objectUrl);
+```
+
+The cost: the browser holds the full image in memory for the duration
+of the click. For a 6 MB pet portrait that's invisible. For an entire
+gallery it would be reckless, which is exactly why the ZIP path still
+exists for "download all."
+
+## Discoverability without clutter
+
+The download icon only renders on hover (and is always visible on
+touch, where there is no hover). On a grid of 80 photos, persistent
+icons turn the gallery into a control panel. The grid has to read as
+*photos first*, *actions second*.
+
+## What the filename should be
+
+The Storage path looks like
+`sessions/8f3a/originals/IMG_4521.jpg`. The client doesn't want that.
+The function returns a `display_filename` derived from the session —
+`tails-and-scales-rex-2026-06-05-01.jpg` — so the client's Downloads
+folder stays human-readable and the photographer's brand quietly rides
+along on every file.
+
+Small feature, three traps, one less support email.

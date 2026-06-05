@@ -166,6 +166,36 @@ export const personalProjects = [
 // Blog Posts Data
 export const blogPosts = [
   {
+    slug: "gallery-expiry-tokens",
+    title: "Adding an Expiry to Token-Gated Galleries Without Breaking Old Links",
+    category: "Architecture",
+    excerpt: "A nullable expires_at column, a 410 Gone instead of a 404, and two quick-set buttons instead of a date picker. Old bookmarks keep working; the storage bill stops growing forever.",
+    date: "Jun 5, 2026",
+    readTime: "4 min read",
+    image: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=400&fit=crop",
+    tags: ["Postgres","Security","UX"],
+  },
+  {
+    slug: "single-image-download-cross-origin",
+    title: "Why the Download Attribute Isn't Enough for Cross-Origin Images",
+    category: "Frontend",
+    excerpt: "Browsers silently ignore the download attribute on cross-origin URLs. Fetching to a blob is the only path that keeps the filename, the original resolution, and the user out of a new tab.",
+    date: "Jun 5, 2026",
+    readTime: "4 min read",
+    image: "https://images.unsplash.com/photo-1503602642458-232111445657?w=800&h=400&fit=crop",
+    tags: ["Browser APIs","Storage","UX"],
+  },
+  {
+    slug: "still-coming-empty-state-202",
+    title: "The 'Still Coming' State: Replacing a 403 With a Promise",
+    category: "UX",
+    excerpt: "An early-visitor used to hit a 403 because the gallery wasn't published yet. Returning 202 with the client's name, pet name, and an ETA turned a confusing error into a reassurance.",
+    date: "Jun 5, 2026",
+    readTime: "4 min read",
+    image: "https://images.unsplash.com/photo-1494256997604-768d1f608cac?w=800&h=400&fit=crop",
+    tags: ["HTTP","Edge Functions","Copywriting"],
+  },
+  {
     slug: "inquiry-to-delivery-lifecycle",
     title: "From Inquiry to Delivery: Modeling a One-Person Photography Business",
     category: "Architecture",
