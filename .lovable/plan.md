@@ -1,130 +1,82 @@
-## Roadmap: Independent Checkpoint Merges (with companion blog posts)
+## Project Audit & Upgrade Paths
 
-Each checkpoint is self-contained — it can be merged, reverted, or skipped without affecting the others. **Each checkpoint also ships a companion blog post** added to `src/data/portfolioData.ts` (`blogPosts` array) documenting what was built, why, trade-offs, and learning points. Posts use the existing markdown pipeline (`MarkdownRenderer`) and follow the existing `BlogPost` shape (slug, title, excerpt, category, date, readTime, image, tags, content).
-
----
-
-### Checkpoint 1 — Route-level code splitting
-**Code scope:** `src/components/AnimatedRoutes.tsx`
-- Convert page imports to `React.lazy()`, wrap `<Routes>` in `<Suspense fallback={<PageSkeleton />}>` (wires up the existing dead component).
-
-**Blog post:** *"Shipping Faster First Paint with React.lazy + Suspense"*
-- Category: Performance · Tags: React, Vite, Suspense
-- Learning points: when lazy hurts vs helps, picking a fallback that doesn't cause layout shift, route chunks vs component chunks, measuring with Lighthouse before/after.
+A read-only pass across code, content, performance, a11y, SEO, and DX. Findings grouped by severity with concrete upgrade paths. Each checkpoint is independently mergeable and ships with a companion blog post documenting the learnings — same pattern as the previous 12-checkpoint roadmap.
 
 ---
 
-### Checkpoint 2 — SEO: sitemap, robots, Article JSON-LD
-**Code scope:** `public/sitemap.xml` (or Vite plugin), `public/robots.txt`, `src/pages/BlogPost.tsx` JSON-LD via existing `<SEO>`.
+### 1. Dead code / YAGNI leftovers
 
-**Blog post:** *"A Pragmatic SEO Checklist for a React SPA"*
-- Category: SEO · Tags: SEO, JSON-LD, Sitemaps
-- Learning points: why SPAs need explicit sitemaps, Article vs BlogPosting schema, validating with Rich Results Test, robots.txt gotchas.
+- **`src/components/MarkdownRenderer.tsx` is unused** after the MDX migration (only referenced by a blog code sample). Removing it lets us drop `react-markdown`, `remark-gfm` (from runtime), and `react-syntax-highlighter` (~200 KB) from `package.json`. MDX already renders via `mdxComponents.tsx`.
+- **`.lovable/plan.md`** still lists shipped checkpoints 1–10. Trim or archive.
+- **`src/lib/colors.ts`** — audit `getCategoryColor` / `getStatusColor` call sites; inline if single-use.
 
----
+### 2. Performance
 
-### Checkpoint 3 — Font + asset loading optimization
-**Code scope:** `index.html`, `src/index.css`
-- Move Google Fonts to `<link rel="preconnect">` + stylesheet, ensure `font-display: swap`, preload hero image.
+- **Framer Motion loads on every route** (~60 KB gz). Options: lazy-load `motion` inside `PageTransition`, or replace `FadeInOnScroll` with CSS `@starting-style` / view-timeline animations.
+- **Hero LCP image not preloaded.** Add `<link rel="preload" as="image" fetchpriority="high">` in `index.html`.
+- **`portfolioData.ts` (~730 lines) is imported by almost every route.** Split into `data/projects.ts`, `data/blog.ts`, `data/resume.ts` so route chunks only pull what they render.
 
-**Blog post:** *"Eliminating CLS from Web Fonts Without Switching to System Stacks"*
-- Category: Performance · Tags: Web Fonts, CLS, Core Web Vitals
-- Learning points: `@import` vs `<link>` cost, `font-display` trade-offs, `size-adjust`/fallback metrics, when preload is harmful.
+### 3. SEO & metadata
 
----
+- **`public/sitemap.xml` is hand-maintained** — new posts drift out of sync. Generate at build time from `blogPosts` via a small Vite plugin.
+- **No RSS feed** — cheap to add (`/rss.xml`) from the same source.
+- **BlogPost JSON-LD** omits `wordCount` and per-post `author.url` variance; add for richer results.
+- **Per-post OG images** — currently reuse Unsplash hero. Consider build-time Satori-style OG generation.
 
-### Checkpoint 4 — Responsive images with `srcset`
-**Code scope:** project/blog card images; introduce `<ResponsiveImage>` wrapper.
+### 4. Accessibility
 
-**Blog post:** *"Responsive Images Without an Image CDN"*
-- Category: Performance · Tags: Images, srcset, LCP
-- Learning points: `srcset` vs `sizes` mental model, picking breakpoints, AVIF/WebP fallback, lazy + decoding=async.
+- **vitest-axe only covers page-mount.** Add tests that open the Cmd+K palette and mobile nav, then re-run axe.
+- **Theme toggle needs `aria-pressed`** (or state-aware `aria-label`) so SR users hear the change.
+- **`FadeInOnScroll` reduced-motion parity** — confirm it short-circuits animations under `prefers-reduced-motion`.
+- **Heading order spot-check** across MDX posts (`h1 → h2 → h3`, no jumps).
 
----
+### 5. Code quality & architecture
 
-### Checkpoint 5 — Repo hygiene
-**Code scope:** delete `tailwind.config.lov.json` if stale, prune unused tokens (`--bronze`, `--copper-glow`), drop deprecated `showSkipToContent` prop.
+- **`BlogPost.tsx` (~200 lines)** mixes MDX loading, JSON-LD, related-posts, and layout. Extract `useMdxPost(slug)` and `<RelatedPosts />`.
+- **`AnimatedRoutes.tsx`** — route+skeleton mapping repeats; collapse into a `routes.map(...)` config.
+- **Shared `<Prose>` wrapper** — blog and project detail pages re-declare `prose prose-invert`.
+- **`useAnalytics` is untested** — add tests for the no-op branch and the route-change fire.
 
-**Blog post:** *"YAGNI in Practice: A Quarterly Dead-Code Sweep"*
-- Category: Engineering · Tags: Refactoring, Tailwind, DX
-- Learning points: how dead tokens leak through autocomplete, deprecation comments as a tool, safe-deletion workflow with grep + types.
+### 6. Testing & CI
 
----
+- Only render-smoke tests today. Add:
+  - Contract test: every `blogPosts` entry has a matching MDX file (guards drift).
+  - Cmd+K: opens, filters, selects.
+  - Theme toggle: persists + updates `<html>` class.
+- **No CI config.** Wire a GitHub Actions job for `tsc --noEmit && vitest run` on PRs.
 
-### Checkpoint 6 — Accessibility automation
-**Code scope:** add `vitest-axe`, `src/test/a11y.test.tsx` covering each route.
+### 7. Content pipeline
 
-**Blog post:** *"Catching A11y Regressions in CI with vitest-axe"*
-- Category: Accessibility · Tags: a11y, Testing, Vitest
-- Learning points: what axe can and can't catch, balancing axe with manual SR checks, ignoring rules responsibly, per-route smoke pattern.
+- **Slug/filename drift risk** between `blogPosts[i].slug` and MDX filenames. Add a build-time assertion in `blogLoader.ts`.
+- **Two sources of truth**: metadata lives in both `portfolioData.ts` and MDX frontmatter. Pick one — parse frontmatter at build time and delete the array, or drop frontmatter.
+- **No draft workflow.** Add `draft: true` flag that hides posts from `/blog`, sitemap, RSS in production.
 
----
+### 8. Security & config
 
-### Checkpoint 7 — Privacy-friendly analytics
-**Code scope:** snippet in `index.html`, `useAnalytics` hook firing on route change, `VITE_ANALYTICS_DOMAIN`.
-
-**Blog post:** *"Cookie-less Analytics for a Personal Site"*
-- Category: Engineering · Tags: Analytics, Privacy, Plausible
-- Learning points: GDPR posture without banners, SPA pageview tracking, what events are worth instrumenting on a portfolio.
-
----
-
-### Checkpoint 8 — Blog content migration to MDX
-**Code scope:** `@mdx-js/rollup`, posts moved to `src/content/blog/*.mdx`, `BlogPost.tsx` dynamic import, slim index in `portfolioData`.
-
-**Blog post:** *"From Stringly-Typed Markdown to MDX Without Breaking the Build"*
-- Category: Engineering · Tags: MDX, Vite, Content
-- Learning points: frontmatter parsing, dynamic import maps in Vite, custom MDX components reusing existing renderers, migration safety net.
+- Document `VITE_ANALYTICS_DOMAIN` in `README.md`.
+- Confirm `robots.txt` allow-all is intentional; consider disallowing `/resume.pdf` from indexing.
+- No CSP / security headers — note for when a custom domain lands.
 
 ---
 
-### Checkpoint 9 — Light mode toggle
-**Code scope:** `next-themes`, light HSL tokens in `index.css`, toggle in `Navigation.tsx`.
+### Suggested checkpoint order
 
-**Blog post:** *"Designing a Second Theme After Committing to One"*
-- Category: Design Systems · Tags: Theming, HSL, Tailwind
-- Learning points: why HSL tokens make this trivial, finding hardcoded colors that slipped through, contrast audits per theme, persisting choice without flash.
+Each ships with a companion blog post capturing the learning points.
 
----
-
-### Checkpoint 10 — Cmd+K command palette
-**Code scope:** shadcn `command`, `<CommandPalette>` mounted in `PageLayout`, indexed against `portfolioData`.
-
-**Blog post:** *"Adding a Cmd+K Palette as a Single Source of Navigation Truth"*
-- Category: UX · Tags: Search, Keyboard, shadcn
-- Learning points: indexing strategy for small sites, fuzzy match vs prefix, accessible dialog patterns, shortcut conflicts.
-
----
-
-### Checkpoint 11 — Contact form (Lovable Cloud + Resend)
-**Code scope:** enable Cloud, edge function `send-contact-email`, `RESEND_API_KEY`, `/contact` route, link from `CTASection`.
-
-**Blog post:** *"A Spam-Resistant Contact Form Without a Backend Server"*
-- Category: Engineering · Tags: Edge Functions, Resend, Forms
-- Learning points: honeypot + rate limit basics, server-side validation with zod, Resend deliverability, environment secrets hygiene.
-
----
-
-### Checkpoint 12 — E2E tests + CI
-**Code scope:** Playwright config, `e2e/*.spec.ts` per route, `.github/workflows/ci.yml` (typecheck + vitest + playwright).
-
-**Blog post:** *"The Smallest Useful Playwright Suite for a Portfolio"*
-- Category: Engineering · Tags: Playwright, CI, Testing
-- Learning points: smoke vs critical-path coverage, headless reliability, caching browsers in GH Actions, what NOT to E2E test.
-
----
-
-### Suggested merge order
 ```text
-1 → 2 → 3 → 5    (quick wins, low risk)
-4 → 6 → 7        (medium, still isolated)
-8 → 9 → 10       (feature work)
-11 → 12          (largest investments)
+A. Hygiene sweep          §1  → post: "Removing 200 KB by Deleting One Component"
+B. Data split             §5  → post: "Splitting a Monolith Data File for Smaller Route Chunks"
+C. Content contract       §7  → post: "One Source of Truth for Blog Metadata"
+D. SEO automation         §3  → post: "Auto-Generating Sitemaps and RSS at Build Time"
+E. A11y depth             §4  → post: "Testing Dialogs and Toggles with vitest-axe"
+F. CI + extra tests       §6  → post: "The Smallest Useful GitHub Actions Config"
+G. Perf polish            §2  → post: "Lazy-Loading Framer Motion Without Breaking Transitions"
 ```
 
-### Per-checkpoint definition of done
-- Code change merged with no regressions to existing tests/typecheck.
-- Companion blog post added to `blogPosts` with full markdown body, appears on `/blog` listing and at its slug.
-- If the checkpoint introduces a new pattern (e.g. `<ResponsiveImage>`, `FadeInOnScroll` analogue), the blog post links to the file.
+Per-checkpoint definition of done (same as the previous roadmap):
 
-Reply "approve" or pick which checkpoint to start with.
+- Code change merged with no regressions to typecheck or existing tests.
+- Companion `.mdx` post added under `src/content/blog/` and registered in `portfolioData.blogPosts`, appearing on `/blog` and its slug page.
+- If the checkpoint introduces a new pattern (e.g. `<Prose>`, `useMdxPost`), the post links to the file.
+
+Reply with letters (e.g. "A, C, D"), "all", or pick a starting checkpoint.

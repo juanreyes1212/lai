@@ -1,0 +1,41 @@
+---
+slug: "removing-200kb-deleting-one-component"
+title: "Removing 200 KB by Deleting One Component"
+category: "Architecture"
+excerpt: "After migrating the blog to MDX, one leftover file kept an entire markdown pipeline in the bundle. Here's what a quick dead-code sweep uncovered."
+date: "Jul 11, 2026"
+readTime: "3 min read"
+image: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=800&h=400&fit=crop"
+tags: ["YAGNI","Bundle Size","Refactoring"]
+---
+
+The MDX migration a few months back replaced `MarkdownRenderer` on
+every blog post — except nobody deleted the file. The component sat
+there, exported from nowhere but still imported through the module
+graph indirectly by TypeScript path completion, keeping
+`react-markdown` and `remark-gfm` alive in the runtime bundle.
+
+## The audit
+
+```bash
+rg -l "MarkdownRenderer" src
+# → src/components/MarkdownRenderer.tsx  (self-reference)
+# → src/content/blog/*.mdx               (historical prose)
+```
+
+One file, self-referential. Safe to delete. `react-markdown` came off
+`package.json` in the same commit.
+
+## Why "unused" doesn't mean "harmless"
+
+Tree-shaking is optimistic, not omniscient. The moment a file has a
+top-level side effect — a `document.` reference, a `console.log`, a
+polyfill import — the bundler keeps it. Deleting the whole file is
+the only reliable signal.
+
+## The rule going forward
+
+Any migration ends with a `git rm` of the thing being migrated
+*from*. Not later, not "when we're sure" — in the same PR.
+
+Cheapest 200 KB I've ever shipped.
