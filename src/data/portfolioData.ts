@@ -166,6 +166,36 @@ export const personalProjects = [
 // Blog Posts Data
 export const blogPosts = [
   {
+    slug: "removing-200kb-deleting-one-component",
+    title: "Removing 200 KB by Deleting One Component",
+    category: "Architecture",
+    excerpt: "After migrating the blog to MDX, one leftover file kept an entire markdown pipeline in the bundle. Here's what a quick dead-code sweep uncovered.",
+    date: "Jul 11, 2026",
+    readTime: "3 min read",
+    image: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=800&h=400&fit=crop",
+    tags: ["YAGNI","Bundle Size","Refactoring"],
+  },
+  {
+    slug: "auto-generating-sitemaps-rss-build-time",
+    title: "Auto-Generating Sitemaps and RSS at Build Time",
+    category: "SEO",
+    excerpt: "Hand-maintained sitemaps drift the moment you publish a post you forgot to add. A 40-line Vite plugin makes drift impossible.",
+    date: "Jul 11, 2026",
+    readTime: "4 min read",
+    image: "https://images.unsplash.com/photo-1432888622747-4eb9a8efeb07?w=800&h=400&fit=crop",
+    tags: ["SEO","Vite","Sitemaps"],
+  },
+  {
+    slug: "smallest-useful-github-actions-config",
+    title: "The Smallest Useful GitHub Actions Config",
+    category: "Engineering",
+    excerpt: "Twelve lines of YAML that catch every regression this portfolio actually cares about — typecheck plus vitest, nothing more.",
+    date: "Jul 11, 2026",
+    readTime: "3 min read",
+    image: "https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=800&h=400&fit=crop",
+    tags: ["CI","GitHub Actions","Testing"],
+  },
+  {
     slug: "gallery-expiry-tokens",
     title: "Adding an Expiry to Token-Gated Galleries Without Breaking Old Links",
     category: "Architecture",
