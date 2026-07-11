@@ -1,0 +1,54 @@
+---
+slug: "smallest-useful-github-actions-config"
+title: "The Smallest Useful GitHub Actions Config"
+category: "Engineering"
+excerpt: "Twelve lines of YAML that catch every regression this portfolio actually cares about — typecheck plus vitest, nothing more."
+date: "Jul 11, 2026"
+readTime: "3 min read"
+image: "https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=800&h=400&fit=crop"
+tags: ["CI","GitHub Actions","Testing"]
+---
+
+CI configs grow like weeds. Every project I've inherited has a
+150-line workflow that installs three Node versions, caches four
+directories, and runs a lint job that hasn't caught a bug in a year.
+For this portfolio I wrote the smallest thing that would fail on the
+regressions I actually care about:
+
+```yaml
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx tsc --noEmit
+      - run: bunx vitest run
+```
+
+That's it. Two signals: **does it type-check** and **do the tests
+pass**. If either fails the PR turns red and I go fix it.
+
+## What I intentionally left out
+
+- **Lint job.** ESLint runs locally via the IDE. Doubling it in CI
+  costs 30 seconds per PR and catches issues that were already
+  visible before commit.
+- **Matrix builds.** This is a Vite SPA — the runtime is the
+  browser, not Node. Testing against three Node versions on Ubuntu
+  proves nothing about Safari on iOS.
+- **Build step.** `tsc --noEmit` catches the same class of errors
+  that would break `vite build`, and skipping the actual build shaves
+  ~40 seconds off the loop.
+- **Caching.** Bun's install is fast enough that the cache setup
+  itself would take longer than the savings.
+
+## The rule
+
+Every job in a CI config should have a documented answer to "what
+kind of regression does this catch?" If you can't name one, delete
+the job. You can always add it back the first time something ships
+broken.

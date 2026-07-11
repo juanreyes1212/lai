@@ -1,0 +1,64 @@
+---
+slug: "auto-generating-sitemaps-rss-build-time"
+title: "Auto-Generating Sitemaps and RSS at Build Time"
+category: "SEO"
+excerpt: "Hand-maintained sitemaps drift the moment you publish a post you forgot to add. A 40-line Vite plugin makes drift impossible."
+date: "Jul 11, 2026"
+readTime: "4 min read"
+image: "https://images.unsplash.com/photo-1432888622747-4eb9a8efeb07?w=800&h=400&fit=crop"
+tags: ["SEO","Vite","Sitemaps"]
+---
+
+The old `public/sitemap.xml` was a static file. Every new blog post
+needed a manual entry, and — predictably — the file drifted by
+several posts within a month. The fix was a tiny Vite plugin that
+generates `sitemap.xml` and `rss.xml` at build time from the actual
+MDX files on disk.
+
+## Filenames as the source of truth
+
+The blog uses `import.meta.glob("./blog/*.mdx")` to load posts, and
+the routing contract is that **the filename is the slug**. Which
+means listing `src/content/blog/` gives you every published URL, no
+metadata file required:
+
+```ts
+readdirSync(dir)
+  .filter((f) => f.endsWith(".mdx"))
+  .map((f) => f.replace(/\.mdx$/, ""));
+```
+
+No sync layer, no forgotten registration step.
+
+## The plugin
+
+```ts
+export const sitemapPlugin = (): Plugin => ({
+  name: "portfolio-sitemap",
+  apply: "build",
+  closeBundle() {
+    const slugs = collectBlogSlugs(process.cwd());
+    writeFileSync("dist/sitemap.xml", buildSitemap(slugs));
+    writeFileSync("dist/rss.xml", buildRss(slugs));
+  },
+});
+```
+
+`apply: "build"` keeps it out of `vite dev` — no filesystem writes
+during local iteration. `closeBundle` runs after the rest of the
+bundle is flushed, so the files land in `dist/` alongside
+`index.html`.
+
+## Why not a script in `package.json`?
+
+Because scripts get forgotten. A Vite plugin is invoked by the same
+command that produces the deployable output — you can't ship the
+site without also shipping a fresh sitemap. That's the whole
+argument for build-time generation over pre-commit hooks or CI
+steps: the guarantee lives next to the code that would violate it.
+
+## Bonus: RSS for free
+
+The same slug list feeds an `rss.xml` writer. It's ~15 lines of
+string templating and it gives every reader an escape hatch from
+algorithmic feeds.
