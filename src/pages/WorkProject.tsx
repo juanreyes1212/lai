@@ -6,7 +6,7 @@ import PageLayout from "@/components/portfolio/PageLayout";
 import BackLink from "@/components/portfolio/BackLink";
 import SEO from "@/components/SEO";
 import ResponsiveImage from "@/components/ResponsiveImage";
-import { workProjects } from "@/data/portfolioData";
+import { workProjects } from "@/data/projects";
 
 const WorkProject = () => {
   const { slug } = useParams<{ slug: string }>();

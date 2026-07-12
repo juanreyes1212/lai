@@ -1,0 +1,66 @@
+---
+slug: "lazy-framer-motion-without-breaking-transitions"
+title: "Lazy-Loading Framer Motion Without Breaking Transitions"
+category: "Performance"
+excerpt: "Framer Motion was loading on every route just to fade cards in. Replacing FadeInOnScroll with IntersectionObserver + CSS transitions keeps the exit animations that actually need it."
+date: "Jul 12, 2026"
+readTime: "4 min read"
+image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=400&fit=crop"
+tags: ["Performance","Bundle Size","Animation"]
+---
+
+Framer Motion is ~60 KB gzipped and it was loading on every route
+mostly to power `<FadeInOnScroll>` — a component that fades and
+translates elements when they enter the viewport. That's exactly
+the animation the platform ships natively via IntersectionObserver
+and CSS transitions.
+
+## Where framer stays
+
+`PageTransition` uses `AnimatePresence` for exit animations. Doing
+that in pure CSS means orchestrating class swaps around React's
+unmount lifecycle, and the API is genuinely worse. Framer earns its
+weight there.
+
+## Where it goes
+
+`FadeInOnScroll` is now a plain component:
+
+```tsx
+const observer = new IntersectionObserver(
+  (entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) {
+        setVisible(true);
+        observer.disconnect();
+        break;
+      }
+    }
+  },
+  { rootMargin: "-50px" },
+);
+```
+
+The element renders with `opacity: 0` and a `translateY(30px)`; when
+it intersects, both animate to their resting values via a CSS
+transition. `prefers-reduced-motion` short-circuits the whole thing
+and renders visible immediately.
+
+## API compatibility
+
+Same props (`delay`, `duration`, `y`, `className`, `as`). Every
+caller kept working — 23 call sites, zero edits — so the swap was
+one file and shipped in the same commit.
+
+## What didn't happen
+
+I didn't code-split framer with `React.lazy`. Wrapping
+`AnimatePresence` in `<Suspense>` means the exit animation of the
+*previous* route can't play while the *next* route's chunk loads —
+you get a flash of unstyled transition. Cutting the *usage* first
+is the cheaper, correct move.
+
+## Lesson
+
+"Lazy-load the library" isn't always the answer. "Stop needing the
+library" usually is.

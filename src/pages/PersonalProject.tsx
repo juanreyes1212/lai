@@ -7,7 +7,7 @@ import PageLayout from "@/components/portfolio/PageLayout";
 import BackLink from "@/components/portfolio/BackLink";
 import SEO from "@/components/SEO";
 import ResponsiveImage from "@/components/ResponsiveImage";
-import { personalProjects } from "@/data/portfolioData";
+import { personalProjects } from "@/data/projects";
 import { getStatusColor } from "@/lib/colors";
 
 const PersonalProject = () => {

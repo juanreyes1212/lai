@@ -6,7 +6,7 @@ import PageLayout from "@/components/portfolio/PageLayout";
 import PageHeader from "@/components/portfolio/PageHeader";
 import SEO from "@/components/SEO";
 import ResponsiveImage from "@/components/ResponsiveImage";
-import { workProjects } from "@/data/portfolioData";
+import { workProjects } from "@/data/projects";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const Work = () => {
