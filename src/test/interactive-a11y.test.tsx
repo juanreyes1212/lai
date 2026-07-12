@@ -34,6 +34,14 @@ describe("interactive a11y — command palette", () => {
       removeListener: () => {},
       dispatchEvent: () => false,
     }));
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
   });
 
   it("opens via Cmd+K with no axe violations", async () => {
