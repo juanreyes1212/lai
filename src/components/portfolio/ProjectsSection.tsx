@@ -2,7 +2,7 @@ import { ArrowUpRight, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { workProjects, personalProjects } from "@/data/portfolioData";
+import { workProjects, personalProjects } from "@/data/projects";
 import { getStatusColor } from "@/lib/colors";
 import ResponsiveImage from "@/components/ResponsiveImage";
 import FadeInOnScroll from "./FadeInOnScroll";

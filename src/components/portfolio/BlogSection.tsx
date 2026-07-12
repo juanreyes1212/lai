@@ -2,7 +2,7 @@ import { ArrowUpRight, Clock, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { blogPosts } from "@/data/portfolioData";
+import { blogPosts } from "@/data/blog";
 import { getCategoryColor } from "@/lib/colors";
 import FadeInOnScroll from "./FadeInOnScroll";
 import SectionHeading from "./SectionHeading";

@@ -6,7 +6,7 @@ import PageLayout from "@/components/portfolio/PageLayout";
 import PageHeader from "@/components/portfolio/PageHeader";
 import SEO from "@/components/SEO";
 import ResponsiveImage from "@/components/ResponsiveImage";
-import { personalProjects } from "@/data/portfolioData";
+import { personalProjects } from "@/data/projects";
 import { getStatusColor } from "@/lib/colors";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 

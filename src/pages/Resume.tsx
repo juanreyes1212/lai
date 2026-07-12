@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import PageLayout from "@/components/portfolio/PageLayout";
 import BackLink from "@/components/portfolio/BackLink";
 import SEO from "@/components/SEO";
-import { resumeData } from "@/data/portfolioData";
+import { resumeData } from "@/data/resume";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const Resume = () => {
