@@ -42,9 +42,8 @@ describe("interactive a11y — command palette", () => {
         disconnect() {}
       },
     );
-    if (!Element.prototype.scrollIntoView) {
-      Element.prototype.scrollIntoView = function () {};
-    }
+    // cmdk calls scrollIntoView on the active item; jsdom doesn't implement it.
+    Element.prototype.scrollIntoView = function () {};
   });
 
   it("opens via Cmd+K with no axe violations", async () => {
