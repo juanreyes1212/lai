@@ -1,0 +1,51 @@
+---
+slug: "testing-dialogs-and-toggles-vitest-axe"
+title: "Testing Dialogs and Toggles with vitest-axe"
+category: "Accessibility"
+excerpt: "Route-level a11y tests miss the states users actually get stuck in — open dialogs, expanded mobile menus, toggled buttons. Here's how to test the states, not just the pages."
+date: "Jul 12, 2026"
+readTime: "4 min read"
+image: "https://images.unsplash.com/photo-1554672408-17407276286f?w=800&h=400&fit=crop"
+tags: ["Accessibility","Testing","vitest-axe"]
+---
+
+The first round of axe tests covered every route on mount. That
+catches static violations (heading order, missing labels, empty
+buttons) but nothing that only appears after interaction — the
+command palette, the mobile nav drawer, a toggled theme button.
+
+## What the tests do
+
+```tsx
+it("opens via Cmd+K with no axe violations", async () => {
+  const { container } = render(withProviders(<CommandPalette />));
+  await act(async () => {
+    fireEvent.keyDown(document, { key: "k", metaKey: true });
+  });
+  expect(screen.getByPlaceholderText(/search pages/i)).toBeDefined();
+  expect(await axe(container, axeOptions)).toHaveNoViolations();
+});
+```
+
+Three new tests:
+
+1. **Cmd+K palette**: dispatch the keyboard shortcut, wait for the
+   dialog to mount, run axe against the whole container.
+2. **Mobile nav**: click the hamburger, assert the close button is
+   present, run axe against the expanded drawer.
+3. **Theme toggle contract**: assert `aria-pressed` reflects the
+   current theme so screen readers hear the state change.
+
+## Gotchas
+
+- **`act`** is required around synthetic events that trigger state
+  updates, otherwise React logs a warning that hides real failures.
+- **`matchMedia` stub** — jsdom doesn't implement it, and the theme
+  hook (via reduced-motion detection elsewhere) breaks without it.
+- **Portal-rendered dialogs**: `cmdk` mounts into the body, so pass
+  the container to axe *after* the dialog is open, not before.
+
+## Lesson
+
+Pages have states. Test the state a user actually complains about,
+not the one they see for 30 milliseconds after a route change.

@@ -1,0 +1,57 @@
+---
+slug: "splitting-monolith-data-file"
+title: "Splitting a Monolith Data File for Smaller Route Chunks"
+category: "Architecture"
+excerpt: "One 762-line portfolioData.ts was pulling resume, projects, and every blog post into every route chunk. Splitting it by domain shrinks the imports each page actually pays for."
+date: "Jul 12, 2026"
+readTime: "3 min read"
+image: "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=800&h=400&fit=crop"
+tags: ["Architecture","Bundle Size","Refactoring"]
+---
+
+`portfolioData.ts` started as one file with three exports:
+`workProjects`, `personalProjects`, `blogPosts`, and `resumeData`.
+It grew to 762 lines. Every route imported from it — the resume
+page pulled the entire blog dataset just to render itself.
+
+## Why tree-shaking wasn't enough
+
+Vite tree-shakes unused *exports*, so unused arrays wouldn't ship —
+but each import still forces the module to load, and if the module
+has any side effects (or the bundler can't prove it doesn't), the
+whole file lands in the route chunk. When you split by domain, each
+chunk cleanly imports only what it uses.
+
+## The split
+
+```
+src/data/
+  projects.ts   // workProjects, personalProjects
+  blog.ts       // blogPosts
+  resume.ts     // resumeData
+  portfolioData.ts  // barrel re-export for back-compat
+```
+
+Then every import site was rewired:
+
+```ts
+// before
+import { workProjects } from "@/data/portfolioData";
+
+// after
+import { workProjects } from "@/data/projects";
+```
+
+## What actually shipped
+
+- Resume route chunk no longer pulls the blog dataset.
+- Blog route no longer pulls resume or projects.
+- Barrel file remains for anywhere that still imports the aggregate
+  (tests, command palette) — those need everything anyway.
+
+## Lesson
+
+"Split by domain, not by convenience." A single data file is fine
+until multiple routes each want a slice. When they do, cutting the
+file along domain lines is a five-minute change with real chunk-size
+wins and no runtime surface area to test.

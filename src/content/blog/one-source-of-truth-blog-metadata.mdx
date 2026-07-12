@@ -1,0 +1,49 @@
+---
+slug: "one-source-of-truth-blog-metadata"
+title: "One Source of Truth for Blog Metadata"
+category: "Content"
+excerpt: "MDX frontmatter and a hand-maintained blogPosts array drifted the moment I forgot to update one of them. A tiny contract test makes drift impossible."
+date: "Jul 12, 2026"
+readTime: "3 min read"
+image: "https://images.unsplash.com/photo-1517842645767-c639042777db?w=800&h=400&fit=crop"
+tags: ["Content","Testing","MDX"]
+---
+
+After the MDX migration this site had two places that described a
+blog post: the frontmatter at the top of `<slug>.mdx`, and the
+`blogPosts` array in `src/data/blog.ts`. The array feeds the index
+page, sitemap, RSS, and Cmd+K search. If a slug didn't match a
+file — or a file wasn't in the array — nothing crashed, the post
+just quietly disappeared.
+
+## The contract
+
+Two failure modes I wanted to make loud:
+
+1. `blogPosts` lists a slug with no matching `<slug>.mdx` → the
+   detail route renders "not found" for a post the index links to.
+2. `<slug>.mdx` exists but the slug isn't in `blogPosts` → the
+   post is unreachable via the list or search.
+
+## The check
+
+`blogLoader.ts` already builds a set of MDX slugs via
+`import.meta.glob`. In dev/test I compare that set to
+`blogPosts.map(p => p.slug)` and log a loud console error on drift.
+Then a vitest asserts the same invariant in CI:
+
+```ts
+it("every registered post has a matching MDX file", () => {
+  const missing = registered.filter((s) => !mdxSlugs.has(s));
+  expect(missing).toEqual([]);
+});
+```
+
+A third test asserts slug uniqueness — cheap insurance against a
+copy-paste mistake in the array.
+
+## Lesson
+
+Two sources of truth are a bug waiting for the next distracted
+commit. When you can't collapse them into one, the next-best move
+is a test that fails the second they disagree.
