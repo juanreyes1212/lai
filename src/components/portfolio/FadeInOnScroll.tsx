@@ -1,6 +1,5 @@
-import { motion, type MotionProps } from "framer-motion";
+import { useEffect, useRef, useState, type ElementType, type ReactNode } from "react";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import type { ElementType, ReactNode } from "react";
 
 interface FadeInOnScrollProps {
   children: ReactNode;
@@ -9,13 +8,17 @@ interface FadeInOnScrollProps {
   delay?: number;
   duration?: number;
   y?: number;
-  /** Use whileInView (true) or animate-on-mount (false). Defaults to true. */
+  /** Kept for API compatibility; the CSS implementation is always in-view triggered. */
   inView?: boolean;
 }
 
 /**
- * Wrapper that fades + slides content in, but respects prefers-reduced-motion.
- * When reduced motion is preferred, content renders immediately with no transform.
+ * Fades + slides content in when it enters the viewport, using IntersectionObserver
+ * + CSS transitions. Respects prefers-reduced-motion (renders instantly, no transform).
+ *
+ * Previously implemented with framer-motion. Rewritten to CSS so list-heavy routes
+ * (Index, Work, Personal, Blog) don't pay for the framer runtime just to fade cards in.
+ * PageTransition still uses framer for AnimatePresence exit animations.
  */
 const FadeInOnScroll = ({
   children,
@@ -24,29 +27,49 @@ const FadeInOnScroll = ({
   delay = 0,
   duration = 0.5,
   y = 30,
-  inView = true,
 }: FadeInOnScrollProps) => {
   const prefersReducedMotion = useReducedMotion();
+  const ref = useRef<HTMLElement | null>(null);
+  const [visible, setVisible] = useState(prefersReducedMotion);
 
-  const Comp = (motion[as] as unknown) as ElementType;
-
-  const motionProps: MotionProps = prefersReducedMotion
-    ? { initial: false }
-    : inView
-      ? {
-          initial: { opacity: 0, y },
-          whileInView: { opacity: 1, y: 0 },
-          viewport: { once: true, margin: "-50px" },
-          transition: { duration, delay },
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setVisible(true);
+      return;
+    }
+    const node = ref.current;
+    if (!node || typeof IntersectionObserver === "undefined") {
+      setVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setVisible(true);
+            observer.disconnect();
+            break;
+          }
         }
-      : {
-          initial: { opacity: 0, y },
-          animate: { opacity: 1, y: 0 },
-          transition: { duration, delay },
-        };
+      },
+      { rootMargin: "-50px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [prefersReducedMotion]);
+
+  const Comp = as as ElementType;
+  const style = prefersReducedMotion
+    ? undefined
+    : {
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : `translateY(${y}px)`,
+        transition: `opacity ${duration}s ease ${delay}s, transform ${duration}s ease ${delay}s`,
+        willChange: visible ? undefined : "opacity, transform",
+      };
 
   return (
-    <Comp className={className} {...motionProps}>
+    <Comp ref={ref} className={className} style={style}>
       {children}
     </Comp>
   );
