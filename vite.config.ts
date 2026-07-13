@@ -5,7 +5,7 @@ import remarkGfm from "remark-gfm";
 import remarkFrontmatter from "remark-frontmatter";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import { sitemapPlugin } from "./scripts/sitemap-plugin";
+import { contentPlugin } from "./scripts/content-plugin";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
     { enforce: "pre" as const, ...mdx({ remarkPlugins: [remarkFrontmatter, remarkGfm], providerImportSource: "@mdx-js/react", development: mode === "development" }) },
     react(),
     mode === "development" && componentTagger(),
-    sitemapPlugin(),
+    contentPlugin(),
   ].filter(Boolean),
   resolve: {
     alias: {
