@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { Plugin } from "vite";
 import satori from "satori";
 import { Resvg } from "@resvg/resvg-js";
-import { parseFrontmatter, type BlogPostMeta } from "../src/content/frontmatter";
+import { parseFrontmatter, frontmatterToMeta, type BlogPostMeta } from "../src/content/frontmatterParser";
 
 const SITE_URL = "https://juanreyes.dev";
 
