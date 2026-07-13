@@ -1,22 +1,28 @@
 import { describe, it, expect } from "vitest";
-import { blogPosts } from "@/data/blog";
+import { blogPosts } from "@/content/frontmatter";
 import { _mdxSlugsForTest } from "@/content/blogLoader";
 
+// MDX files are the source of truth for blog metadata (see frontmatter.ts).
+// These tests guard the invariants downstream code assumes.
 describe("blog content contract", () => {
   const mdxSlugs = new Set(_mdxSlugsForTest());
-  const registeredSlugs = new Set(blogPosts.map((p) => p.slug));
 
-  it("every registered post has a matching MDX file", () => {
-    const missing = [...registeredSlugs].filter((s) => !mdxSlugs.has(s));
-    expect(missing, `Missing MDX files for slugs: ${missing.join(", ")}`).toEqual([]);
+  it("every parsed post has a matching MDX file", () => {
+    const missing = blogPosts.map((p) => p.slug).filter((s) => !mdxSlugs.has(s));
+    expect(missing, `Parsed slug without file: ${missing.join(", ")}`).toEqual([]);
   });
 
-  it("every MDX file is registered in blogPosts", () => {
-    const orphans = [...mdxSlugs].filter((s) => !registeredSlugs.has(s));
-    expect(orphans, `Orphaned MDX files: ${orphans.join(", ")}`).toEqual([]);
-  });
-
-  it("slugs are unique in blogPosts", () => {
+  it("slugs are unique", () => {
     expect(new Set(blogPosts.map((p) => p.slug)).size).toBe(blogPosts.length);
+  });
+
+  it("every post has required frontmatter fields", () => {
+    const missing = blogPosts.filter(
+      (p) => !p.title || !p.category || !p.excerpt || !p.date || !p.readTime || !p.image,
+    );
+    expect(
+      missing.map((p) => p.slug),
+      `Posts missing required frontmatter: ${missing.map((p) => p.slug).join(", ")}`,
+    ).toEqual([]);
   });
 });

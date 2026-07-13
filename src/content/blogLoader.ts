@@ -1,8 +1,8 @@
 import { lazy, type ComponentType } from "react";
-import { blogPosts } from "@/data/blog";
 
 // Vite resolves this at build time into a map of `./blog/<slug>.mdx` -> dynamic import.
-// `as: "default"` would inline; we want lazy chunks per post for code splitting.
+// Each post becomes its own lazy-loaded chunk. Metadata lives in `./frontmatter.ts`,
+// which reads the same files with `?raw` — so filenames ARE the slugs. No drift possible.
 const modules = import.meta.glob<{ default: ComponentType }>("./blog/*.mdx");
 
 const slugRegex = /\.\/blog\/(.+)\.mdx$/;
@@ -13,25 +13,6 @@ const mdxSlugs = new Set(
     .filter((s): s is string => Boolean(s)),
 );
 
-// Dev-time contract: every `blogPosts` entry must have a matching MDX file, and
-// every MDX file must be registered in `blogPosts` (so sitemap/RSS/list stay in sync).
-// Fails loudly in dev/test; stripped in production builds.
-if (import.meta.env?.DEV || import.meta.env?.MODE === "test") {
-  const registered = new Set(blogPosts.map((p) => p.slug));
-  const missingFile = [...registered].filter((s) => !mdxSlugs.has(s));
-  const orphanedFile = [...mdxSlugs].filter((s) => !registered.has(s));
-  if (missingFile.length || orphanedFile.length) {
-    const details = [
-      missingFile.length && `registered but no MDX file: ${missingFile.join(", ")}`,
-      orphanedFile.length && `MDX file but not registered: ${orphanedFile.join(", ")}`,
-    ]
-      .filter(Boolean)
-      .join(" | ");
-    // eslint-disable-next-line no-console
-    console.error(`[blogLoader] Slug/file drift → ${details}`);
-  }
-}
-
 export const hasMdxPost = (slug: string): boolean => mdxSlugs.has(slug);
 
 export const loadMdxPost = (slug: string): ComponentType | null => {
@@ -40,5 +21,5 @@ export const loadMdxPost = (slug: string): ComponentType | null => {
   return lazy(entry[1]);
 };
 
-// Exposed for tests: read the raw slug sets so contract can be asserted.
+// Exposed for tests.
 export const _mdxSlugsForTest = (): string[] => [...mdxSlugs];

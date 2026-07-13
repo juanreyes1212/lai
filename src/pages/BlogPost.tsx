@@ -8,7 +8,7 @@ import PageLayout from "@/components/portfolio/PageLayout";
 import BackLink from "@/components/portfolio/BackLink";
 import SEO from "@/components/SEO";
 import ResponsiveImage from "@/components/ResponsiveImage";
-import { blogPosts } from "@/data/blog";
+import { blogPosts } from "@/content/frontmatter";
 import { getCategoryColor } from "@/lib/colors";
 import { loadMdxPost } from "@/content/blogLoader";
 import { mdxComponents } from "@/content/mdxComponents";
@@ -33,7 +33,7 @@ const BlogPost = () => {
         title={post.title}
         description={post.excerpt}
         canonical={`/blog/${post.slug}`}
-        ogImage={post.image}
+        ogImage={`https://juanreyes.dev/og/${post.slug}.png`}
         ogType="article"
         jsonLd={{
           "@context": "https://schema.org",
@@ -114,6 +114,7 @@ const BlogPost = () => {
               alt={post.title}
               sizes="(min-width: 896px) 896px, 100vw"
               loading="eager"
+              fetchPriority="high"
               className="w-full h-64 md:h-96 object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent" />

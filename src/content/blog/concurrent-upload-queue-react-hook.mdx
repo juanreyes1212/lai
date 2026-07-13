@@ -1,6 +1,12 @@
 ---
+slug: "concurrent-upload-queue-react-hook"
 title: "A Concurrent Upload Queue in 120 Lines of React"
+category: "Engineering"
+excerpt: "useReducer plus a scheduler effect, capped at three parallel uploads, with per-item retry and progress. Sequential is too slow, all-at-once gets 429s — the middle path is a bounded queue."
 date: "Jun 4, 2026"
+readTime: "6 min read"
+image: "https://images.unsplash.com/photo-1593720219276-0b1eacd0aef4?w=800&h=400&fit=crop"
+tags: ["React","Hooks","Uploads"]
 ---
 
 When Diego drops 60 edited photos onto the dashboard, three things
