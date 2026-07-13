@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Command } from "cmdk";
 import { useNavigate } from "react-router-dom";
 import { Search, FileText, Briefcase, User, BookOpen, Home, FileDown, Sun, Moon, type LucideIcon } from "lucide-react";
-import { workProjects, personalProjects, blogPosts } from "@/content/frontmatter";
+import { workProjects, personalProjects, blogPosts } from "@/data/portfolioData";
 import { useTheme } from "@/hooks/useTheme";
 
 type Item = {
