@@ -14,7 +14,7 @@ import Blog from "@/pages/Blog";
 import BlogPost from "@/pages/BlogPost";
 import Resume from "@/pages/Resume";
 import NotFound from "@/pages/NotFound";
-import { workProjects, personalProjects, blogPosts } from "@/content/frontmatter";
+import { workProjects, personalProjects, blogPosts } from "@/data/portfolioData";
 
 declare module "vitest" {
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
