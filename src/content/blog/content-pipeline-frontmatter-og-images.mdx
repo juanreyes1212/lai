@@ -1,0 +1,109 @@
+---
+slug: "content-pipeline-frontmatter-og-images"
+title: "One Source of Truth, Automated OG Images, and a Real RSS Feed"
+category: "Content"
+excerpt: "Deleted the parallel blogPosts array, generated per-post OG images at build time with satori, and made the RSS feed something a reader might actually subscribe to. All three ship from the same MDX frontmatter."
+date: "Jul 13, 2026"
+readTime: "6 min read"
+image: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=800&h=400&fit=crop"
+tags: ["MDX","Satori","RSS","Content Pipeline"]
+---
+
+The last content checkpoint got the blog to "no drift possible" by adding a contract test between MDX filenames and a hand-maintained `blogPosts` array. This one gets it to "no parallel array at all" — and while we're touching the pipeline, adds two things that were always on the list: per-post OG images and a real RSS feed.
+
+## The problem with keeping two lists
+
+Even with a passing contract test, `src/data/blog.ts` was a 576-line file whose only job was to mirror what the MDX frontmatter already said. Every new post meant editing two files. Every metadata typo could pass CI as long as both files agreed. That's not a source of truth — it's two sources agreeing to lie together.
+
+The fix is a one-line Vite feature I hadn't been using:
+
+```ts
+const raw = import.meta.glob<string>("./blog/*.mdx", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+```
+
+`?raw` gives us the file contents as a string. `eager: true` inlines all 57 of them at bundle time (~30 KB gzipped — the frontmatter is tiny). A small YAML parser turns each into a `BlogPostMeta`, sorted by `Date.parse(date)`. `src/data/blog.ts` is gone. The 576 lines are 21.
+
+## Sharing the parser with the build
+
+The catch: the Vite plugin that writes `sitemap.xml` and `rss.xml` runs in Node. `import.meta.glob` doesn't exist there. So the frontmatter logic splits into two files:
+
+- **`frontmatterParser.ts`** — pure functions, Node-safe. Parses YAML, maps to `BlogPostMeta`.
+- **`frontmatter.ts`** — imports the parser, calls `import.meta.glob`, exports the sorted index.
+
+The build plugin imports directly from `frontmatterParser`. One canonical parser, two entry points, no duplication.
+
+## Satori + resvg for OG images
+
+Every blog post link that gets shared on LinkedIn or Bluesky was falling back to the same Unsplash hero. Not wrong, just anonymous. Per-post cards would be better.
+
+I looked at three options:
+
+1. **Design each card in Figma, export PNGs by hand.** No.
+2. **Runtime edge function via `@vercel/og`.** Overkill — I have a static site, not a serverless deployment.
+3. **Build-time generation with `satori` + `@resvg/resvg-js`.** Correct answer.
+
+`satori` renders JSX-like objects to SVG using a real layout engine (yoga). `@resvg/resvg-js` rasterizes that SVG to PNG. Both are pure JS / prebuilt binaries — no headless Chrome, no native canvas.
+
+The one thing that tripped me up: satori accepts TTF, OTF, and **WOFF** — not WOFF2. Google Fonts serves WOFF2. So instead of fetching at build time, I added `@fontsource/inter` (which ships WOFF alongside WOFF2) and pointed the plugin at `node_modules/@fontsource/inter/files/inter-latin-400-normal.woff`.
+
+The template is one function returning a React-shaped tree — no JSX in the plugin file, just an `el()` factory so the plugin doesn't need MDX transformation:
+
+```ts
+el("div", { style: { fontSize: 60, fontWeight: 700 } }, post.title)
+```
+
+Category badge on top in copper, title dominant, byline + date in a footer. 57 posts render in about 3 seconds during `vite build` and land in `dist/og/<slug>.png`.
+
+`BlogPost.tsx` now points at the absolute URL:
+
+```tsx
+ogImage={`https://juanreyes.dev/og/${post.slug}.png`}
+```
+
+Absolute because social crawlers don't resolve relative paths. Nothing changes at runtime — the images are static assets served alongside `sitemap.xml`.
+
+## RSS with fields readers can actually use
+
+The previous RSS was three fields per item: title, link, guid. Barely a feed. The updated version pulls the full frontmatter:
+
+```xml
+<item>
+  <title>Lazy-Loading Framer Motion Without Breaking Transitions</title>
+  <link>https://juanreyes.dev/blog/lazy-framer-motion-without-breaking-transitions</link>
+  <guid isPermaLink="true">https://.../lazy-framer-motion-without-breaking-transitions</guid>
+  <pubDate>Sun, 12 Jul 2026 00:00:00 GMT</pubDate>
+  <category>Performance</category>
+  <description>Framer Motion was loading on every route just to fade cards in…</description>
+</item>
+```
+
+`pubDate` in RFC 822 (so readers sort correctly), `category` from frontmatter, `description` from the excerpt, and an `atom:link rel="self"` at the channel level so RSS validators stop complaining. All derived from the same parsed frontmatter that drives the sitemap and the on-site blog list.
+
+## What the "hero LCP preload" checkpoint became
+
+The audit had "add `<link rel="preload">` for the hero image" on the list. Then I actually looked at the homepage hero: it's decorative concentric circles and typography. There is no hero image to preload.
+
+The real LCP element on `/blog` and `/blog/[slug]` is the featured post image, which was already `loading="eager"`. Adding `fetchPriority="high"` is the honest version of the preload — it tells the browser to prioritize the image download the way it already knows how, without shipping a preload tag for an image that doesn't exist.
+
+## What the contract test guards now
+
+The blog contract test used to check parity between two lists. There's only one list now, so it checks the invariants that actually matter:
+
+- Every parsed post has a matching MDX file (guards against filename typos).
+- Slugs are unique (guards against copy-paste when scaffolding a new post).
+- Every post has all required frontmatter fields (guards against forgetting `readTime` or `image`).
+
+Miss any field and the test names the exact slug. That last check caught 50 files during the migration — every post that had ever been written with partial frontmatter, silently propped up by `blog.ts`.
+
+## The net
+
+- Deleted 576 lines from `src/data/blog.ts`, added 21 to `src/content/frontmatter.ts`.
+- 57 per-post OG images (~4.5 MB total in `dist/og/`), zero runtime cost.
+- RSS feed with fields worth subscribing to.
+- Fewer places for future me to lie to future me about what a post's category is.
+
+The plugin runs during `vite build` only. Dev is untouched — no build slowdown for the fast inner loop, no OG regeneration on save. Ship it once at build, serve it forever from `/dist`.
