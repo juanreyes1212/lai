@@ -1,6 +1,12 @@
 ---
+slug: "forward-only-auth-guest-bookings"
 title: "Forward-Only Auth: Letting Guests Book First and Register Later"
+category: "Engineering"
+excerpt: "A nullable clients.user_id, an auth trigger that links on email match, and an RLS policy that bridges both identities turn 'account required' into 'account optional' without losing data integrity."
 date: "Jun 1, 2026"
+readTime: "6 min read"
+image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&h=400&fit=crop"
+tags: ["Supabase","Auth","RLS"]
 ---
 
 The booking wizard on Tails & Scales had a familiar fork in the road:

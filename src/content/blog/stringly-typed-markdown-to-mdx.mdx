@@ -6,7 +6,7 @@ excerpt: "23 blog posts lived inside a 1,951-line TypeScript file as multi-line 
 date: "May 22, 2026"
 readTime: "6 min read"
 image: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=800&h=400&fit=crop"
-tags: ["MDX", "Vite", "Content"]
+tags: ["MDX","Vite","Content"]
 ---
 
 For a year my blog posts lived as template literals in `portfolioData.ts`. The file grew to 1,951 lines and 82 KB. Every typo in a backtick required a full reparse of the whole module. Bundle output? All 23 posts loaded on `/blog/anything`, because the bundler had no way to split them.

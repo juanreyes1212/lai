@@ -1,6 +1,12 @@
 ---
+slug: "junction-table-now-multi-pet-ui-later"
 title: "Schema-Ready, Feature-Deferred: Junction Tables for Things You Haven't Built Yet"
+category: "Architecture"
+excerpt: "booking_pets is a many-to-many table that always has exactly one row per booking — for now. The cost is one extra INSERT. The reward is that multi-pet support becomes a UI change instead of a destructive migration."
 date: "Jun 1, 2026"
+readTime: "5 min read"
+image: "https://images.unsplash.com/photo-1576201836106-db1758fd1c97?w=800&h=400&fit=crop"
+tags: ["Schema Design","Postgres","MVP"]
 ---
 
 A booking in Tails & Scales currently has exactly one pet attached

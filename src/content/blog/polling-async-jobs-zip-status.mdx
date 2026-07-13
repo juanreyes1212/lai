@@ -1,6 +1,12 @@
 ---
+slug: "polling-async-jobs-zip-status"
 title: "Polling Edge Function Jobs: The Three-Second Loop That Doesn't Leak"
+category: "Engineering"
+excerpt: "WebSockets are overkill for a button that gets clicked once. A status-gated setInterval, a DB column as source of truth, and a return-from-useEffect cleanup are the whole pattern — including the memory leak you almost shipped."
 date: "Jun 4, 2026"
+readTime: "5 min read"
+image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=400&fit=crop"
+tags: ["React","Polling","Edge Functions"]
 ---
 
 When Diego clicks "Generate ZIP" on a published gallery, the Edge
