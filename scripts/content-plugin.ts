@@ -21,24 +21,13 @@ const escapeXml = (s: string) =>
 
 const collectPosts = (root: string): BlogPostMeta[] => {
   const dir = resolve(root, "src/content/blog");
-  const posts = readdirSync(dir)
+  return readdirSync(dir)
     .filter((f) => f.endsWith(".mdx"))
     .map((f) => {
       const slug = f.replace(/\.mdx$/, "");
-      const fm = parseFrontmatter(readFileSync(join(dir, f), "utf8"));
-      return {
-        slug: String(fm.slug ?? slug),
-        title: String(fm.title ?? slug),
-        category: String(fm.category ?? "Uncategorized"),
-        excerpt: String(fm.excerpt ?? ""),
-        date: String(fm.date ?? ""),
-        readTime: String(fm.readTime ?? ""),
-        image: String(fm.image ?? ""),
-        tags: Array.isArray(fm.tags) ? (fm.tags as string[]) : [],
-      } as BlogPostMeta;
+      return frontmatterToMeta(slug, parseFrontmatter(readFileSync(join(dir, f), "utf8")));
     })
     .sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
-  return posts;
 };
 
 const buildSitemap = (posts: BlogPostMeta[]): string => {
