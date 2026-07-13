@@ -8,7 +8,7 @@ import PageLayout from "@/components/portfolio/PageLayout";
 import BackLink from "@/components/portfolio/BackLink";
 import SEO from "@/components/SEO";
 import ResponsiveImage from "@/components/ResponsiveImage";
-import { blogPosts } from "@/data/blog";
+import { blogPosts } from "@/content/frontmatter";
 import { getCategoryColor } from "@/lib/colors";
 import { loadMdxPost } from "@/content/blogLoader";
 import { mdxComponents } from "@/content/mdxComponents";

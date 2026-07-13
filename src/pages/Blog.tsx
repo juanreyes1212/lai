@@ -9,7 +9,7 @@ import PageLayout from "@/components/portfolio/PageLayout";
 import PageHeader from "@/components/portfolio/PageHeader";
 import SEO from "@/components/SEO";
 import ResponsiveImage from "@/components/ResponsiveImage";
-import { blogPosts } from "@/data/blog";
+import { blogPosts } from "@/content/frontmatter";
 import { getCategoryColor } from "@/lib/colors";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
