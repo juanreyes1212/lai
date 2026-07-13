@@ -177,6 +177,7 @@ const Blog = () => {
                         alt=""
                         sizes="(min-width: 1024px) 50vw, 100vw"
                         loading="eager"
+                        fetchPriority="high"
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/80 lg:block hidden" aria-hidden="true" />
