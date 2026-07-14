@@ -14,7 +14,20 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [
-    { enforce: "pre" as const, ...mdx({ remarkPlugins: [remarkFrontmatter, remarkGfm], providerImportSource: "@mdx-js/react", development: mode === "development" }) },
+    (() => {
+      // Wrap MDX plugin so `?raw` imports fall through to Vite's built-in raw loader
+      // (frontmatter.ts reads MDX source as strings via import.meta.glob({ query: "?raw" })).
+      const p = mdx({ remarkPlugins: [remarkFrontmatter, remarkGfm], providerImportSource: "@mdx-js/react", development: mode === "development" });
+      const origTransform = p.transform;
+      return {
+        ...p,
+        enforce: "pre" as const,
+        transform(code: string, id: string, opts?: unknown) {
+          if (/[?&]raw(&|$)/.test(id)) return null;
+          return (origTransform as any)?.call(this, code, id, opts);
+        },
+      };
+    })(),
     react(),
     mode === "development" && componentTagger(),
     contentPlugin(),
