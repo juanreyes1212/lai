@@ -17,7 +17,7 @@ export default defineConfig(({ mode, command }) => ({
     (() => {
       // Wrap MDX plugin so `?raw` imports fall through to Vite's built-in raw loader
       // (frontmatter.ts reads MDX source as strings via import.meta.glob({ query: "?raw" })).
-      const p = mdx({ remarkPlugins: [remarkFrontmatter, remarkGfm], providerImportSource: "@mdx-js/react", development: mode === "development" });
+      const p = mdx({ remarkPlugins: [remarkFrontmatter, remarkGfm], providerImportSource: "@mdx-js/react", development: command === "serve" });
       const origTransform = p.transform;
       return {
         ...p,
