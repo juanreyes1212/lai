@@ -10,17 +10,22 @@
     
     <link rel="canonical" href="https://juanreyes.dev" />
 
-    <!-- Fonts: preconnect first, then async stylesheet (font-display: swap is in the URL). -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Fonts are self-hosted via @fontsource; imported in src/main.tsx. Preload the
+         two weights used on first paint (body 400, hero heading 700) so the LCP text
+         doesn't wait on a stylesheet -> font-file waterfall. -->
     <link
       rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap"
+      as="font"
+      type="font/woff2"
+      href="/node_modules/@fontsource/sora/files/sora-latin-400-normal.woff2"
+      crossorigin
     />
     <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/node_modules/@fontsource/sora/files/sora-latin-700-normal.woff2"
+      crossorigin
     />
 
     <meta property="og:title" content="Juan Reyes | Senior Frontend Developer" />
