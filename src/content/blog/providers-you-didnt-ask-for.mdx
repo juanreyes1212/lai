@@ -1,0 +1,65 @@
+---
+slug: "providers-you-didnt-ask-for"
+title: "The Providers You Didn't Ask For"
+category: "Architecture"
+excerpt: "Five wrappers in App.tsx, three of them wrapping nothing. Here's the audit that cut the provider tree in half and shaved three runtime dependencies."
+date: "Jul 15, 2026"
+readTime: "3 min read"
+image: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&h=400&fit=crop"
+tags: ["YAGNI","Bundle Size","Refactoring"]
+---
+
+Scaffolded projects come with a familiar `App.tsx`: `HelmetProvider`
+wraps `QueryClientProvider` wraps `TooltipProvider` wraps `Toaster`
+wraps `Sonner` wraps `BrowserRouter`. It looks like architecture. On
+this site it was theater.
+
+## The grep test
+
+```bash
+grep -rn "useQuery\|useMutation" src        # 0 hits
+grep -rn "Tooltip" src | grep -v ui/tooltip # 0 hits
+grep -rn "useToast\|toast(" src             # 0 consumers
+```
+
+Three providers, zero consumers. The whole `@tanstack/react-query`,
+`@radix-ui/react-tooltip`, and `@radix-ui/react-toast` trees were
+loading on every page for nothing.
+
+## What actually shipped
+
+- `TooltipProvider` — deleted. No `Tooltip` in the codebase.
+- Radix `Toaster` — deleted. Sonner stays because it's lighter and
+  the one toast surface I'd reach for first if a real consumer
+  appeared.
+- `QueryClientProvider` — deleted. No fetching library needed; the
+  content pipeline is build-time and MDX is already static.
+
+`App.tsx` went from 5 wrappers to 3, and three runtime packages came
+off `package.json`.
+
+## The "in case we need it later" trap
+
+Every one of these was defensible when the template scaffolded them —
+"you'll probably want toasts eventually." The problem is that the
+provider ships whether or not the feature does. It costs
+initialization work, bundle bytes, and a line of context in every
+mental model of the render tree.
+
+The right time to add `QueryClientProvider` is the commit that adds
+the first `useQuery`. Not the template. Not "when we might."
+
+## What stayed and why
+
+- `HelmetProvider` — every page uses `<SEO />`.
+- `Sonner` — kept as the *sole* toast surface, mounted once so the
+  first consumer can call `toast(...)` without another wiring pass.
+- `BrowserRouter` — obvious.
+
+## The rule
+
+If a provider's consumer count is zero, delete the provider. When the
+first real consumer lands, add it back in the same commit. The delta
+is one line; the mental clarity is significant.
+
+Cheapest architectural win of the quarter.
