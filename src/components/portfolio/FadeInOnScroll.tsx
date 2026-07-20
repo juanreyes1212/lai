@@ -8,8 +8,6 @@ interface FadeInOnScrollProps {
   delay?: number;
   duration?: number;
   y?: number;
-  /** Kept for API compatibility; the CSS implementation is always in-view triggered. */
-  inView?: boolean;
 }
 
 /**
