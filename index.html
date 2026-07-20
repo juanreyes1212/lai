@@ -10,23 +10,9 @@
     
     <link rel="canonical" href="https://juanreyes.dev" />
 
-    <!-- Fonts are self-hosted via @fontsource; imported in src/main.tsx. Preload the
-         two weights used on first paint (body 400, hero heading 700) so the LCP text
-         doesn't wait on a stylesheet -> font-file waterfall. -->
-    <link
-      rel="preload"
-      as="font"
-      type="font/woff2"
-      href="/node_modules/@fontsource/sora/files/sora-latin-400-normal.woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      as="font"
-      type="font/woff2"
-      href="/node_modules/@fontsource/sora/files/sora-latin-700-normal.woff2"
-      crossorigin
-    />
+    <!-- Fonts are self-hosted via @fontsource (woff2, font-display: swap) and
+         imported in src/main.tsx, so they're bundled and same-origin. -->
+
 
     <meta property="og:title" content="Juan Reyes | Senior Frontend Developer" />
     <meta property="og:description" content="Senior Frontend Developer with 7+ years experience building enterprise-scale React and Vue.js applications." />
