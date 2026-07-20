@@ -38,6 +38,15 @@ export const mdxComponents: MDXComponents = {
   ),
   th: (props) => <th className="border border-border bg-muted px-4 py-2 text-left font-semibold" {...props} />,
   td: (props) => <td className="border border-border px-4 py-2" {...props} />,
+  img: ({ alt, ...props }) => (
+    <img
+      alt={alt ?? ""}
+      loading="lazy"
+      decoding="async"
+      className="w-full h-auto rounded-lg border border-border my-4"
+      {...props}
+    />
+  ),
   pre: ({ children }) => <>{children}</>,
   code: ({ className, children, ...props }) => {
     const match = /language-(\w+)/.exec(className || "");
