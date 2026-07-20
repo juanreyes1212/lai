@@ -1,0 +1,88 @@
+---
+slug: "self-hosting-fonts-in-2026"
+title: "The Font Handshake You're Still Paying For"
+category: "Performance"
+excerpt: "Even with preconnect and preload, Google Fonts still costs a DNS lookup, a TLS handshake, and a CSS round-trip before the first glyph paints. Bundling woff2 through @fontsource beats it on every metric."
+date: "Jul 15, 2026"
+readTime: "3 min read"
+image: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&h=400&fit=crop"
+tags: ["Performance","Fonts","LCP"]
+---
+
+The last font checkpoint on this site did the "right" 2023 thing:
+`preconnect` to `fonts.googleapis.com` and `fonts.gstatic.com`, then
+a `<link rel="stylesheet">` with `display=swap`. It shipped, CLS
+went to zero, and I moved on.
+
+Auditing again, I noticed the waterfall was still there — just
+smaller. The document fetches, parses the head, opens two TLS
+sessions in parallel, fetches the CSS, parses `@font-face`, fetches
+the woff2. That's three round-trips before any text can paint in the
+real face. `swap` hides it visually, but the FOUT is real.
+
+## What self-hosting actually saves
+
+- **1 DNS lookup + 1 TLS handshake** (fonts.gstatic.com).
+- **1 CSS round-trip** — the stylesheet that tells the browser
+  where the fonts live. Bundled fonts skip this entirely because
+  the `@font-face` blocks are inline in the app CSS.
+- **Cache partitioning wins nothing.** Chrome and Safari partition
+  the HTTP cache per top-level origin. The old "everyone shares
+  Google Fonts" argument stopped being true years ago.
+
+## The migration
+
+```ts
+// src/main.tsx
+import "@fontsource/sora/400.css";
+import "@fontsource/sora/700.css";
+import "@fontsource/instrument-serif/400.css";
+```
+
+Each import pulls in a woff2 next to a `@font-face` block with
+`font-display: swap` already set. Vite fingerprints both, serves
+same-origin, and tree-shakes the weights I don't import.
+
+The `<link rel="preconnect">` and `<link rel="stylesheet">` in
+`index.html` came out in the same commit. Net change: **-2 external
+origins, -1 blocking stylesheet, +N woff2 files inlined into the app
+bundle graph.**
+
+## Only import the weights you use
+
+Fontsource ships every weight as its own stylesheet. Importing
+`sora/index.css` pulls in 100–800 normal + italic, which is 16 files
+you don't need. Importing `sora/400.css` and `sora/700.css`
+individually keeps the bundle honest.
+
+Grep for the actual weights first:
+
+```bash
+grep -rn "font-weight\|font-light\|font-bold\|font-semibold" src
+```
+
+Then import exactly those.
+
+## What about preload?
+
+I skipped `<link rel="preload" as="font">`. Two reasons:
+
+1. Vite hashes the woff2 filenames at build time, so a static
+   `href` in `index.html` would break the moment the file
+   re-fingerprints.
+2. The fonts are imported at the top of `main.tsx`, which the
+   `<script type="module">` in `index.html` discovers immediately.
+   The CSS is inlined into the app stylesheet, so the browser sees
+   the `@font-face` `src` URLs during the first CSS parse — no
+   further waterfall.
+
+If Lighthouse ever flags the fonts as render-blocking, a Vite plugin
+that emits preload tags with the hashed filenames is the right next
+step. Until then, the module graph is doing the discovery work.
+
+## The rule
+
+External font CDNs made sense when self-hosting meant hunting for
+woff2 files and hand-writing `@font-face`. Fontsource turned that
+into a one-line import. There's no reason to keep paying for the
+handshake.
