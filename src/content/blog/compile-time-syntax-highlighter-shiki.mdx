@@ -1,0 +1,60 @@
+---
+title: "Shipping a Compile-Time Syntax Highlighter"
+excerpt: "Swapping react-syntax-highlighter for Shiki via a rehype plugin: how ~200 KB of Prism left the client bundle and code blocks got prettier in the process."
+date: "2026-07-21"
+readTime: "5 min read"
+category: "Performance"
+tags: ["Shiki", "MDX", "Bundle Size", "Performance"]
+image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200"
+---
+
+## The problem
+
+`react-syntax-highlighter` (Prism build) was the single largest dependency
+in the client bundle — roughly **200 KB gzipped** once you counted the
+core, the language grammars, and the theme. And every visitor paid that
+cost, even on pages with zero code blocks.
+
+The kicker: highlighting is a **pure function** of the source string.
+Nothing about it needs to happen in the browser.
+
+## The swap
+
+`@shikijs/rehype` runs inside the MDX pipeline at build time. It walks
+the HAST, finds every `<pre><code class="language-*">`, and replaces it
+with pre-tokenized markup carrying inline styles for both a light and
+dark theme:
+
+```ts
+// vite.config.ts
+mdx({
+  rehypePlugins: [
+    [rehypeShiki, {
+      themes: { dark: "github-dark", light: "github-light" },
+      defaultColor: false,
+    }],
+  ],
+})
+```
+
+`defaultColor: false` is the trick that makes theming work: Shiki emits
+CSS variables (`--shiki-dark`, `--shiki-light`) instead of committing
+to one palette. A few lines of CSS pick the right one based on our
+`.light` class toggle.
+
+## What the client ships now
+
+- Zero highlighting JS
+- Pre-rendered `<span>` tokens with inline colors
+- A ~10-line CSS block to swap themes
+
+MDX components got simpler too — the `code` override just passes
+`language-*` classes through untouched instead of instantiating a
+React-tree highlighter on every render.
+
+## Takeaway
+
+If your content is authored (not user-generated), highlight it at
+build time. The runtime cost of a syntax highlighter is a tax on
+every visitor for work that only needs to happen once, on your
+machine.

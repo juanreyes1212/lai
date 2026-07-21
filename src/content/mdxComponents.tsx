@@ -1,9 +1,8 @@
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import type { MDXComponents } from "mdx/types";
 
-// Shared component map for MDX content — mirrors MarkdownRenderer's styling
-// so legacy posts and MDX posts render identically.
+// Shared component map for MDX content. Code blocks are pre-highlighted at build
+// time by @shikijs/rehype, so we render <pre>/<code> as-is (preserving Shiki's
+// inline styles and classes) and only style inline code + non-highlighted blocks.
 export const mdxComponents: MDXComponents = {
   h1: (props) => <h1 className="text-3xl font-bold text-foreground mt-8 mb-4" {...props} />,
   h2: (props) => <h2 className="text-2xl font-bold text-foreground mt-8 mb-4" {...props} />,
@@ -47,26 +46,22 @@ export const mdxComponents: MDXComponents = {
       {...props}
     />
   ),
-  pre: ({ children }) => <>{children}</>,
+  pre: ({ className, ...props }) => (
+    <pre
+      className={`${className ?? ""} rounded-lg my-4 p-4 overflow-x-auto border border-border text-sm`.trim()}
+      {...props}
+    />
+  ),
   code: ({ className, children, ...props }) => {
-    const match = /language-(\w+)/.exec(className || "");
-    if (!match) {
-      return (
-        <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-primary" {...props}>
-          {children}
-        </code>
-      );
+    // Shiki-highlighted code has a language- class; render as-is.
+    if (className?.includes("language-")) {
+      return <code className={className} {...props}>{children}</code>;
     }
+    // Inline code
     return (
-      <SyntaxHighlighter
-        style={oneDark}
-        language={match[1]}
-        PreTag="div"
-        className="rounded-lg my-4 !bg-card border border-border"
-        customStyle={{ margin: "1rem 0", padding: "1rem", borderRadius: "0.5rem" }}
-      >
-        {String(children).replace(/\n$/, "")}
-      </SyntaxHighlighter>
+      <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-primary" {...props}>
+        {children}
+      </code>
     );
   },
 };
