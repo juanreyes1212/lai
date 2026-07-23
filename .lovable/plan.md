@@ -1,37 +1,23 @@
-## Problem
+## Goal
 
-The site renders a blank page. Root cause (confirmed via Playwright):
+Give every blog post a unique, theme-appropriate Unsplash cover image. No two posts share an image.
 
-```
-TypeError: text.match is not a function
-  at parseFrontmatter (src/content/frontmatterParser.ts:8)
-  at src/content/frontmatter.ts:13
-```
+## Approach
 
-`src/content/frontmatter.ts` uses `import.meta.glob("./blog/*.mdx", { query: "?raw", ... })` expecting raw strings. But `@mdx-js/rollup` is registered with `enforce: "pre"` in `vite.config.ts` and transforms every `.mdx` request — including `?raw` — into a compiled JSX module. So each entry in the glob is a module object, not a string, and `text.match(...)` blows up. This throws during initial module evaluation, so React never mounts → blank `#root`.
+1. Audit all ~55 MDX files in `src/content/blog/` and collect current `image:` frontmatter values.
+2. For each post, hand-pick a distinct Unsplash photo whose subject matches the post's theme (e.g. wearable → wrist/watch macro; ZIP streaming → cardboard boxes on a belt; unit toggle → scale readout; junction table → chain links; pending review queue → clipboard/inbox tray; RSS/OG pipeline → printing press; MDX migration → nested folders; theme toggle → light bulb; cmdk → keyboard keys, etc.).
+3. Replace only the `image:` line in each MDX frontmatter — keep the existing `?w=800&h=400&fit=crop` query so `<ResponsiveImage>` continues to derive `srcset` correctly. No component changes.
+4. Verify uniqueness: script-check that every `image:` URL (ignoring query string) appears exactly once across all posts.
+5. Run vitest + typecheck to confirm nothing broke (contract test still passes since only image URLs changed).
 
-Verified: `curl http://localhost:8080/src/content/blog/spa-seo-checklist.mdx?raw` returns compiled JSX, not raw MDX.
+## Out of scope
 
-## Fix
+- No switch to AI-generated or local assets (per user choice).
+- No changes to `<ResponsiveImage>`, OG image generation, or the content plugin.
+- No new blog post about this change.
 
-Make the MDX plugin skip requests with a `?raw` query so Vite's built-in raw loader handles them. Wrap `mdx({...})` with a filtered version of its `transform` (and `resolveId` if defined) that bails out when `id` contains `?raw` or `&raw`.
+## Technical notes
 
-### Change
-
-In `vite.config.ts`:
-
-1. Instantiate the MDX plugin as before.
-2. Wrap its `transform` hook so it returns `null` for ids matching `/[?&]raw(&|$)/`, delegating to Vite's default `?raw` handling.
-3. Keep `enforce: "pre"` and all other plugin config unchanged.
-
-### Verification
-
-- Reload preview → root mounts, homepage renders.
-- Playwright: no `pageerror`, `#root` has content, screenshot shows hero.
-- `/blog` list still populates from frontmatter.
-- Opening an individual post still renders MDX (non-raw path unchanged).
-- Existing vitest suite still green (frontmatter contract test runs in Node, unaffected).
-
-## Notes
-
-Purely a build-config fix — no content, component, or data changes. Scoped to `vite.config.ts`.
+- Photos will be sourced from Unsplash's free stock library, referenced by their canonical `images.unsplash.com/photo-<id>` URL with `?w=800&h=400&fit=crop`.
+- Each swap is a one-line edit inside the MDX frontmatter block; no body changes.
+- I'll batch the edits in parallel `line_replace` calls, then run one uniqueness check to catch any accidental collisions before verifying tests.
